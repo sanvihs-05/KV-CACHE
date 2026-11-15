@@ -1,0 +1,8 @@
+# Enough to run tests, the sim engine and the analysis on Windows (py -3.10 -m pip install -r ...)
+numpy>=1.26,<2
+pandas>=2.0
+matplotlib>=3.7
+pyyaml>=6
+tabulate>=0.9
+pytest>=7
+zstandard>=0.22

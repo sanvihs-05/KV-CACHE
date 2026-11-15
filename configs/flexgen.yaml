@@ -1,0 +1,22 @@
+# Step 1 baseline: FlexLLMGen with the whole KV cache on disk.
+# --percent = weights_gpu weights_cpu cache_gpu cache_cpu act_gpu act_cpu ; the rest goes to disk.
+#
+# Size matters: FlexLLMGen deletes its cache files when it finishes. If the run is shorter
+# than Linux's writeback delay (~30 s) and the cache is smaller than the dirty-page limit
+# (~10% of WSL RAM = ~760 MB), the page cache absorbs the writes and almost nothing
+# reaches the SSD. Measured on this laptop:
+#   prompt 512, gen 32, 1 batch  : 0.43 GB cache folder -> 0.001-0.42 GB written (unreliable)
+#   prompt 1024, gen 128, 4 batches: 3.62 GB cache folder -> 3.61 GB written, ~255 s (reliable)
+name: flexgen
+results_dir: results
+store:
+  offload_dir: ~/kvwear_offload
+engine:
+  kind: flexgen
+  model: facebook/opt-1.3b
+  flexgen_percent: [100, 0, 0, 0, 100, 0]
+  flexgen_prompt_len: 1024
+  flexgen_gen_len: 128
+  flexgen_gpu_batch_size: 4
+  flexgen_num_gpu_batches: 4
+  flexgen_compress_cache: false

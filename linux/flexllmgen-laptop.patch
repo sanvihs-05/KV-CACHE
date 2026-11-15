@@ -1,0 +1,26 @@
+diff --git a/flexllmgen/pytorch_backend.py b/flexllmgen/pytorch_backend.py
+index 15f94b9..e0858ef 100644
+--- a/flexllmgen/pytorch_backend.py
++++ b/flexllmgen/pytorch_backend.py
+@@ -879,7 +879,11 @@ def copy_worker_func(queue, cuda_id):
+     """The copy worker thread."""
+     torch.cuda.set_device(cuda_id)
+ 
+-    cpu_buf = torch.empty((1 * GB,), dtype=torch.float16, pin_memory=True)
++    # kvwear patch: upstream pins a 1G-element (2 GiB) relay buffer per copy thread, which
++    # exhausts RAM on a laptop / WSL2 (4 threads = 8 GiB). Size it from the environment and
++    # grow it only if a single copy needs more.
++    buf_elems = int(float(os.environ.get("FLEXLLMGEN_PIN_BUF_MB", "256")) * 2**20 // 2)
++    cpu_buf = torch.empty((buf_elems,), dtype=torch.float16, pin_memory=True)
+     copy_stream = torch.cuda.Stream()
+ 
+     with torch.cuda.stream(copy_stream):
+@@ -897,6 +901,8 @@ def copy_worker_func(queue, cuda_id):
+                 dst.device.device_type == DeviceType.CUDA):
+                 # Use a pinned cpu buffer as a relay
+                 size = np.prod(src_data.shape)
++                if size > cpu_buf.numel():
++                    cpu_buf = torch.empty((int(size),), dtype=torch.float16, pin_memory=True)
+                 tmp_cpu_buf = cpu_buf[:size].view(src_data.shape)
+                 tmp_cpu_buf.copy_(src_data)
+                 dst_data.copy_(tmp_cpu_buf)

@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+results/runs/
+results/**/runs/
+results/final/run_all_*.log
+results/experiments.csv
+results/report/

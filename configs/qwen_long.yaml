@@ -1,0 +1,35 @@
+# Long shared documents (8-12K tokens) on Qwen2.5-0.5B: where recompute is expensive.
+# KV = 24 layers x 2 x 2 kv-heads x 64 x 2 B = 12 KiB/token (OPT-1.3B: 192 KiB/token, 16x more).
+# RAM tier scaled by the same 16x so the tier holds the same number of tokens (256 MB OPT = 16 MB here).
+name: qwen_long
+policy: write_through
+results_dir: results
+workload:
+  seed: 0
+  num_conversations: 16
+  concurrency: 4
+  mix: {doc_qa: 0.35, debug: 0.30, general: 0.35}
+  num_shared_docs: 3
+  system_prompt_tokens: 200
+  doc_tokens: [8000, 12000]
+  log_tokens: [200, 400]
+  user_tokens: [15, 60]
+  reply_tokens: [60, 140]
+  turns: {doc_qa: [3, 7], debug: [2, 5], general: [1, 6]}
+  gen_tokens: 32
+  max_context_tokens: 16000
+store:
+  block_tokens: 64             # 64 tok x 12 KiB = 768 KiB per block
+  ram_mb: 64
+  ssd_gb: 20
+  offload_dir: ~/kvwear_offload
+  async_writes: true
+  max_pending_mb: 64
+  fsync: false
+  bypass_page_cache: false
+engine:
+  kind: hf
+  model: Qwen/Qwen2.5-0.5B-Instruct
+  dtype: float16
+  device: cuda
+  prefill_chunk: 512

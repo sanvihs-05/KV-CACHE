@@ -1,0 +1,37 @@
+# Main multi-turn experiment: OPT-1.3B on an RTX 3050 Laptop (4 GB), KV offloaded RAM -> SSD.
+# Every field can be overridden on the command line:  --set store.ram_mb=512
+name: default
+policy: write_through          # overridden per run by --policy
+results_dir: results
+
+workload:
+  seed: 0
+  num_conversations: 20        # "20 long conversations"
+  concurrency: 4               # 4 chats open at once -> KV must survive other requests
+  mix: {doc_qa: 0.35, debug: 0.30, general: 0.35}
+  num_shared_docs: 3
+  system_prompt_tokens: 200
+  doc_tokens: [700, 1000]
+  log_tokens: [200, 400]
+  user_tokens: [15, 60]
+  reply_tokens: [60, 140]
+  turns: {doc_qa: [3, 7], debug: [2, 5], general: [1, 6]}
+  gen_tokens: 32
+  max_context_tokens: 2000     # OPT's limit is 2048 positions
+
+store:
+  block_tokens: 64             # one block of OPT-1.3B = 64 tok x 192 KiB = 12 MiB (fp16)
+  ram_mb: 1024                 # RAM tier: ~5,400 tokens of OPT-1.3B KV
+  ssd_gb: 20
+  offload_dir: ~/kvwear_offload   # must be on the WSL ext4 disk, NOT /mnt/c or OneDrive
+  async_writes: true
+  max_pending_mb: 512
+  fsync: false
+  bypass_page_cache: false     # true = SSD hits really read the SSD (slower, more honest)
+
+engine:
+  kind: hf
+  model: facebook/opt-1.3b
+  dtype: float16
+  device: cuda
+  prefill_chunk: 512

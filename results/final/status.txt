@@ -1,0 +1,30 @@
+2026-11-13 07:31:24  stopping OneDrive for the measurements (restarted at the end)
+2026-11-13 07:31:24  validate: week-1 check
+2026-11-13 07:36:30  validate: tiny SMART-bracketed experiment
+2026-11-13 07:40:36  validate OK: write_through SMART delta 0.241 GB, app 0.144 GB, linux 0.148 GB
+2026-11-13 07:40:36  stage ram1024 started
+2026-11-13 08:38:45  stage ram1024 done
+2026-11-13 08:38:46  stage ram256 started
+2026-11-13 11:34:22  stopping OneDrive for the measurements (restarted at the end)
+2026-11-13 11:34:22  ALL DONE
+2026-11-13 11:34:23  OneDrive restarted
+2026-11-13 11:39:45  stopping OneDrive for the measurements (restarted at the end)
+2026-11-13 11:39:45  stage ram256 started
+2026-11-13 12:10:10  stage ram256 done
+2026-11-13 12:10:10  stage ctx1000 started
+2026-11-13 12:55:20  stage ctx1000 done
+2026-11-13 12:55:20  stage flexgen started
+2026-11-13 13:14:40  stage flexgen done
+2026-11-13 13:14:40  stage flexgen_compress started
+2026-11-13 13:34:13  stage flexgen_compress done
+2026-11-13 13:34:13  ALL DONE
+2026-11-13 13:34:13  OneDrive restarted
+2026-11-15 08:17:36  stopping OneDrive for the measurements (restarted at the end)
+2026-11-15 08:17:36  stage shift started
+2026-11-15 08:34:16  stage shift done
+2026-11-15 08:34:16  stage qwen started
+2026-11-15 09:19:03  stage qwen done
+2026-11-15 09:19:03  stage qwen_long started
+2026-11-15 09:58:11  stage qwen_long done
+2026-11-15 09:58:11  ALL DONE
+2026-11-15 09:58:11  OneDrive restarted

@@ -1,0 +1,17 @@
+# Tiny run for checking the setup end to end (minutes, small model).
+name: smoke
+results_dir: results
+workload:
+  num_conversations: 6
+  concurrency: 3
+  gen_tokens: 8
+  doc_tokens: [300, 400]
+  max_context_tokens: 1000
+store:
+  block_tokens: 32
+  ram_mb: 16
+  ssd_gb: 2
+  offload_dir: ~/kvwear_offload
+engine:
+  kind: hf
+  model: facebook/opt-125m
