@@ -6,12 +6,15 @@ requires-python = ">=3.10"
 dependencies = ["numpy>=1.26,<2", "pandas>=2.0", "matplotlib>=3.7", "pyyaml>=6"]
 
 [project.optional-dependencies]
-gpu = ["torch>=2.4", "transformers>=4.46", "accelerate"]
+gpu = ["torch>=2.4", "transformers>=4.46", "accelerate", "ninja"]
 extra = ["zstandard", "tabulate"]
 test = ["pytest>=7"]
 
 [tool.setuptools]
-packages = ["kvwear", "kvwear.engines"]
+packages = ["kvwear", "kvwear.engines", "kvwear.cuda"]
+
+[tool.setuptools.package-data]
+"kvwear.cuda" = ["*.cu", "*.cpp"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -9,6 +9,7 @@ pyyaml==6.0.2
 tabulate==0.9.0
 zstandard==0.23.0
 pytest==8.3.4
+ninja  # builds kvwear/cuda (JIT, nvcc)
 # FlexLLMGen's own dependencies (it is installed from source with --no-deps)
 pulp==2.9.0
 attrs==24.2.0

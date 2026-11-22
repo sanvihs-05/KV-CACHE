@@ -54,6 +54,18 @@ if not os.path.isdir(os.path.expanduser("~/opt_weights/opt-1.3b-np")):
     download_opt_weights("opt-1.3b", "~/opt_weights")
 PY
 
+echo "== CUDA compiler for kvwear's kernels (nvcc + runtime headers only, ~0.3 GB; optional)"
+# kvwear/cuda is JIT-compiled with nvcc on first use. Only nvcc and cudart headers are needed
+# (the bindings avoid cuBLAS headers), so skip the multi-GB cuda-toolkit meta-package.
+if [ ! -x /usr/local/cuda-12.1/bin/nvcc ]; then
+  if ! apt-cache policy cuda-nvcc-12-1 | grep -q Candidate; then
+    wget -q https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-keyring_1.1-1_all.deb -O /tmp/cuda-keyring.deb
+    sudo dpkg -i /tmp/cuda-keyring.deb && sudo apt-get update -y
+  fi
+  sudo apt-get install -y --no-install-recommends cuda-nvcc-12-1 cuda-cudart-dev-12-1 ||     echo "   (CUDA compiler not installed: kvwear runs on the CPU codec path; GPU tests will skip)"
+fi
+python -m pip install ninja
+
 echo "== freezing versions"
 python -m pip freeze > linux/pip-freeze.txt
 python - <<'PY'
