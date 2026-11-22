@@ -100,9 +100,17 @@ def run_multiturn(cfg: ExperimentConfig, run_dir: Path, verbose: bool, train_set
 
     warn_offload_location(cfg.store.offload_dir)
     s = cfg.store
+    gpu_decode = False
+    if s.codec_device == "cuda":
+        policy.codec.to_device("cuda")                       # GPU quantization in the writer thread
+        if getattr(engine, "accepts_encoded", False):
+            engine.enable_gpu_loader()                       # GPU dequantize + scatter on load
+            gpu_decode = True
+    elif s.codec_device != "cpu":
+        raise ValueError(f"store.codec_device must be 'cpu' or 'cuda', not '{s.codec_device}'")
     store = TieredKVStore(policy, s.offload_dir, ram_bytes=int(s.ram_mb * 2**20), ssd_bytes=int(s.ssd_gb * 2**30),
                           async_writes=s.async_writes, max_pending_bytes=int(s.max_pending_mb * 2**20),
-                          fsync=s.fsync, bypass_page_cache=s.bypass_page_cache)
+                          fsync=s.fsync, bypass_page_cache=s.bypass_page_cache, read_encoded=gpu_decode)
     disk = DiskCounter(store.root)
     mon = DirSizeMonitor(store.root, interval=2.0)
     mon.start()
@@ -164,7 +172,8 @@ def run_multiturn(cfg: ExperimentConfig, run_dir: Path, verbose: bool, train_set
         "latency_mean_s": statistics.fmean(lat), "latency_p50_s": _pct(lat, 0.5), "latency_p95_s": _pct(lat, 0.95),
         "ttft_mean_s": statistics.fmean(ttft), "ttft_p95_s": _pct(ttft, 0.95),
         "decode_tok_per_s": dec_tok / dec_s if dec_s > 0 else None,
-        "offload_dir_peak_bytes": mon.peak,
+        "offload_dir_peak_bytes": mon.peak, "codec_device": cfg.store.codec_device,
+        "load_s_total": sum(x["load_s"] for x in rows), "extract_s_total": sum(x["extract_s"] for x in rows),
         **store.summary(), **disk_delta,
     }
     with open(run_dir / "requests.csv", "w", newline="") as f:

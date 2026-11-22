@@ -1,0 +1,638 @@
+{
+  "device": {
+    "peak_gbps": 187.872,
+    "memory_clock_khz": 5871000,
+    "bus_width_bits": 128,
+    "name": "NVIDIA GeForce RTX 3050 Laptop GPU",
+    "capability": "8.6",
+    "sms": 16
+  },
+  "kernels": [
+    {
+      "shape": "opt-1.3b block (64 tok, 12 MiB)",
+      "op": "memcpy D2D (ceiling)",
+      "method": "-",
+      "time_ms": 0.1549919992685318,
+      "bytes": 25165824,
+      "gbps": 162.36853591648227
+    },
+    {
+      "shape": "opt-1.3b block (64 tok, 12 MiB)",
+      "op": "quantize v0 naive (thread/group)",
+      "method": "int8",
+      "variant": 0,
+      "time_ms": 2.401135921478272,
+      "bytes": 19070976,
+      "gbps": 7.942480818936254
+    },
+    {
+      "shape": "opt-1.3b block (64 tok, 12 MiB)",
+      "op": "quantize v1 warp/group + shuffle",
+      "method": "int8",
+      "variant": 1,
+      "time_ms": 0.2539519965648651,
+      "bytes": 19070976,
+      "gbps": 75.09677520936064
+    },
+    {
+      "shape": "opt-1.3b block (64 tok, 12 MiB)",
+      "op": "quantize v2 + half2 vector I/O",
+      "method": "int8",
+      "variant": 2,
+      "time_ms": 0.1981439962983131,
+      "bytes": 19070976,
+      "gbps": 96.24806381359109
+    },
+    {
+      "shape": "opt-1.3b block (64 tok, 12 MiB)",
+      "op": "quantize v3 + register cache (1 pass)",
+      "method": "int8",
+      "variant": 3,
+      "time_ms": 0.1704799979925156,
+      "bytes": 19070976,
+      "gbps": 111.86635514177595
+    },
+    {
+      "shape": "opt-1.3b block (64 tok, 12 MiB)",
+      "op": "quantize v4 sub-warp groups + 128-bit I/O",
+      "method": "int8",
+      "variant": 4,
+      "time_ms": 0.12646400183439255,
+      "bytes": 19070976,
+      "gbps": 150.8016172457825
+    },
+    {
+      "shape": "opt-1.3b block (64 tok, 12 MiB)",
+      "op": "dequantize",
+      "method": "int8",
+      "time_ms": 0.1223679967224598,
+      "bytes": 19070976,
+      "gbps": 155.84937655925242
+    },
+    {
+      "shape": "opt-1.3b block (64 tok, 12 MiB)",
+      "op": "quantize torch ops on GPU (no custom kernel)",
+      "method": "int8",
+      "time_ms": 1.9066239595413208,
+      "bytes": 19070976,
+      "gbps": 10.002484183922629
+    },
+    {
+      "shape": "opt-1.3b block (64 tok, 12 MiB)",
+      "op": "quantize v0 naive (thread/group)",
+      "method": "int4",
+      "variant": 0,
+      "time_ms": 1.6128000020980835,
+      "bytes": 16121856,
+      "gbps": 9.996190463186482
+    },
+    {
+      "shape": "opt-1.3b block (64 tok, 12 MiB)",
+      "op": "quantize v1 warp/group + shuffle",
+      "method": "int4",
+      "variant": 1,
+      "time_ms": 0.3051519989967346,
+      "bytes": 16121856,
+      "gbps": 52.83221493880012
+    },
+    {
+      "shape": "opt-1.3b block (64 tok, 12 MiB)",
+      "op": "quantize v2 + half2 vector I/O",
+      "method": "int4",
+      "variant": 2,
+      "time_ms": 0.29132799804210663,
+      "bytes": 16121856,
+      "gbps": 55.339191936059144
+    },
+    {
+      "shape": "opt-1.3b block (64 tok, 12 MiB)",
+      "op": "quantize v3 + register cache (1 pass)",
+      "method": "int4",
+      "variant": 3,
+      "time_ms": 0.2728959918022156,
+      "bytes": 16121856,
+      "gbps": 59.07692485159142
+    },
+    {
+      "shape": "opt-1.3b block (64 tok, 12 MiB)",
+      "op": "quantize v4 sub-warp groups + 128-bit I/O",
+      "method": "int4",
+      "variant": 4,
+      "time_ms": 0.11059200018644333,
+      "bytes": 16121856,
+      "gbps": 145.77777753201593
+    },
+    {
+      "shape": "opt-1.3b block (64 tok, 12 MiB)",
+      "op": "dequantize",
+      "method": "int4",
+      "time_ms": 0.11776000261306763,
+      "bytes": 16121856,
+      "gbps": 136.90434478821066
+    },
+    {
+      "shape": "opt-1.3b block (64 tok, 12 MiB)",
+      "op": "quantize torch ops on GPU (no custom kernel)",
+      "method": "int4",
+      "time_ms": 2.3920639753341675,
+      "bytes": 16121856,
+      "gbps": 6.7397260968941275
+    },
+    {
+      "shape": "qwen2.5-0.5b block (64 tok, 768 KiB)",
+      "op": "memcpy D2D (ceiling)",
+      "method": "-",
+      "time_ms": 0.08337599784135818,
+      "bytes": 1572864,
+      "gbps": 18.86470975727009
+    },
+    {
+      "shape": "qwen2.5-0.5b block (64 tok, 768 KiB)",
+      "op": "quantize v0 naive (thread/group)",
+      "method": "int8",
+      "variant": 0,
+      "time_ms": 0.11064000055193901,
+      "bytes": 1191936,
+      "gbps": 10.77310189853493
+    },
+    {
+      "shape": "qwen2.5-0.5b block (64 tok, 768 KiB)",
+      "op": "quantize v1 warp/group + shuffle",
+      "method": "int8",
+      "variant": 1,
+      "time_ms": 0.058000000193715096,
+      "bytes": 1191936,
+      "gbps": 20.55062062101784
+    },
+    {
+      "shape": "qwen2.5-0.5b block (64 tok, 768 KiB)",
+      "op": "quantize v2 + half2 vector I/O",
+      "method": "int8",
+      "variant": 2,
+      "time_ms": 0.10175999999046326,
+      "bytes": 1191936,
+      "gbps": 11.71320754826755
+    },
+    {
+      "shape": "qwen2.5-0.5b block (64 tok, 768 KiB)",
+      "op": "quantize v3 + register cache (1 pass)",
+      "method": "int8",
+      "variant": 3,
+      "time_ms": 0.03635200113058091,
+      "bytes": 1191936,
+      "gbps": 32.78873137460625
+    },
+    {
+      "shape": "qwen2.5-0.5b block (64 tok, 768 KiB)",
+      "op": "quantize v4 sub-warp groups + 128-bit I/O",
+      "method": "int8",
+      "variant": 4,
+      "time_ms": 0.040991999208927155,
+      "bytes": 1191936,
+      "gbps": 29.07728393350531
+    },
+    {
+      "shape": "qwen2.5-0.5b block (64 tok, 768 KiB)",
+      "op": "dequantize",
+      "method": "int8",
+      "time_ms": 0.0394240003079176,
+      "bytes": 1191936,
+      "gbps": 30.23376599762813
+    },
+    {
+      "shape": "qwen2.5-0.5b block (64 tok, 768 KiB)",
+      "op": "quantize torch ops on GPU (no custom kernel)",
+      "method": "int8",
+      "time_ms": 0.27639999985694885,
+      "bytes": 1191936,
+      "gbps": 4.312358902376584
+    },
+    {
+      "shape": "qwen2.5-0.5b block (64 tok, 768 KiB)",
+      "op": "quantize v0 naive (thread/group)",
+      "method": "int4",
+      "variant": 0,
+      "time_ms": 0.05427199974656105,
+      "bytes": 1007616,
+      "gbps": 18.56603782254859
+    },
+    {
+      "shape": "qwen2.5-0.5b block (64 tok, 768 KiB)",
+      "op": "quantize v1 warp/group + shuffle",
+      "method": "int4",
+      "variant": 1,
+      "time_ms": 0.05796799995005131,
+      "bytes": 1007616,
+      "gbps": 17.382279893531297
+    },
+    {
+      "shape": "qwen2.5-0.5b block (64 tok, 768 KiB)",
+      "op": "quantize v2 + half2 vector I/O",
+      "method": "int4",
+      "variant": 2,
+      "time_ms": 0.055664001032710075,
+      "bytes": 1007616,
+      "gbps": 18.101753041573318
+    },
+    {
+      "shape": "qwen2.5-0.5b block (64 tok, 768 KiB)",
+      "op": "quantize v3 + register cache (1 pass)",
+      "method": "int4",
+      "variant": 3,
+      "time_ms": 0.05238400027155876,
+      "bytes": 1007616,
+      "gbps": 19.235186216717256
+    },
+    {
+      "shape": "qwen2.5-0.5b block (64 tok, 768 KiB)",
+      "op": "quantize v4 sub-warp groups + 128-bit I/O",
+      "method": "int4",
+      "variant": 4,
+      "time_ms": 0.0510879997164011,
+      "bytes": 1007616,
+      "gbps": 19.723144487814398
+    },
+    {
+      "shape": "qwen2.5-0.5b block (64 tok, 768 KiB)",
+      "op": "dequantize",
+      "method": "int4",
+      "time_ms": 0.04336000047624111,
+      "bytes": 1007616,
+      "gbps": 23.238376128526983
+    },
+    {
+      "shape": "qwen2.5-0.5b block (64 tok, 768 KiB)",
+      "op": "quantize torch ops on GPU (no custom kernel)",
+      "method": "int4",
+      "time_ms": 0.41676801443099976,
+      "bytes": 1007616,
+      "gbps": 2.4176903339755245
+    },
+    {
+      "shape": "opt-1.3b x16 blocks (1024 tok, 192 MiB)",
+      "op": "memcpy D2D (ceiling)",
+      "method": "-",
+      "time_ms": 2.2778879404067993,
+      "bytes": 402653184,
+      "gbps": 176.76601945927666
+    },
+    {
+      "shape": "opt-1.3b x16 blocks (1024 tok, 192 MiB)",
+      "op": "quantize v0 naive (thread/group)",
+      "method": "int8",
+      "variant": 0,
+      "time_ms": 39.74324798583985,
+      "bytes": 305135616,
+      "gbps": 7.677671842742118
+    },
+    {
+      "shape": "opt-1.3b x16 blocks (1024 tok, 192 MiB)",
+      "op": "quantize v1 warp/group + shuffle",
+      "method": "int8",
+      "variant": 1,
+      "time_ms": 3.477504014968872,
+      "bytes": 305135616,
+      "gbps": 87.7455826611695
+    },
+    {
+      "shape": "opt-1.3b x16 blocks (1024 tok, 192 MiB)",
+      "op": "quantize v2 + half2 vector I/O",
+      "method": "int8",
+      "variant": 2,
+      "time_ms": 2.7712320089340214,
+      "bytes": 305135616,
+      "gbps": 110.10828938764065
+    },
+    {
+      "shape": "opt-1.3b x16 blocks (1024 tok, 192 MiB)",
+      "op": "quantize v3 + register cache (1 pass)",
+      "method": "int8",
+      "variant": 3,
+      "time_ms": 2.373072028160095,
+      "bytes": 305135616,
+      "gbps": 128.58253452870522
+    },
+    {
+      "shape": "opt-1.3b x16 blocks (1024 tok, 192 MiB)",
+      "op": "quantize v4 sub-warp groups + 128-bit I/O",
+      "method": "int8",
+      "variant": 4,
+      "time_ms": 1.7524639964103699,
+      "bytes": 305135616,
+      "gbps": 174.1180512838035
+    },
+    {
+      "shape": "opt-1.3b x16 blocks (1024 tok, 192 MiB)",
+      "op": "dequantize",
+      "method": "int8",
+      "time_ms": 1.7976320385932922,
+      "bytes": 305135616,
+      "gbps": 169.7430894916509
+    },
+    {
+      "shape": "opt-1.3b x16 blocks (1024 tok, 192 MiB)",
+      "op": "quantize torch ops on GPU (no custom kernel)",
+      "method": "int8",
+      "time_ms": 28.37657642364502,
+      "bytes": 305135616,
+      "gbps": 10.753080690373318
+    },
+    {
+      "shape": "opt-1.3b x16 blocks (1024 tok, 192 MiB)",
+      "op": "quantize v0 naive (thread/group)",
+      "method": "int4",
+      "variant": 0,
+      "time_ms": 26.835263252258304,
+      "bytes": 257949696,
+      "gbps": 9.612340806021063
+    },
+    {
+      "shape": "opt-1.3b x16 blocks (1024 tok, 192 MiB)",
+      "op": "quantize v1 warp/group + shuffle",
+      "method": "int4",
+      "variant": 1,
+      "time_ms": 4.217856168746947,
+      "bytes": 257949696,
+      "gbps": 61.15658895894319
+    },
+    {
+      "shape": "opt-1.3b x16 blocks (1024 tok, 192 MiB)",
+      "op": "quantize v2 + half2 vector I/O",
+      "method": "int4",
+      "variant": 2,
+      "time_ms": 3.6290560960769653,
+      "bytes": 257949696,
+      "gbps": 71.07900489023727
+    },
+    {
+      "shape": "opt-1.3b x16 blocks (1024 tok, 192 MiB)",
+      "op": "quantize v3 + register cache (1 pass)",
+      "method": "int4",
+      "variant": 3,
+      "time_ms": 3.3054720163345337,
+      "bytes": 257949696,
+      "gbps": 78.03717433555605
+    },
+    {
+      "shape": "opt-1.3b x16 blocks (1024 tok, 192 MiB)",
+      "op": "quantize v4 sub-warp groups + 128-bit I/O",
+      "method": "int4",
+      "variant": 4,
+      "time_ms": 1.5103839635849,
+      "bytes": 257949696,
+      "gbps": 170.78418615340416
+    },
+    {
+      "shape": "opt-1.3b x16 blocks (1024 tok, 192 MiB)",
+      "op": "dequantize",
+      "method": "int4",
+      "time_ms": 1.5332800149917603,
+      "bytes": 257949696,
+      "gbps": 168.23391257818372
+    },
+    {
+      "shape": "opt-1.3b x16 blocks (1024 tok, 192 MiB)",
+      "op": "quantize torch ops on GPU (no custom kernel)",
+      "method": "int4",
+      "time_ms": 34.519998550415046,
+      "bytes": 257949696,
+      "gbps": 7.472471229199939
+    }
+  ],
+  "end_to_end": [
+    {
+      "shape": "opt-1.3b block (64 tok, 12 MiB)",
+      "op": "encode host->bytes",
+      "impl": "CPU numpy",
+      "method": "int8",
+      "time_ms": 57.69281799939563,
+      "mb_per_s": 218.10187881846602
+    },
+    {
+      "shape": "opt-1.3b block (64 tok, 12 MiB)",
+      "op": "encode host->bytes",
+      "impl": "CPU torch (multi-thread)",
+      "method": "int8",
+      "time_ms": 19.180918499841937,
+      "mb_per_s": 656.0119631447103
+    },
+    {
+      "shape": "opt-1.3b block (64 tok, 12 MiB)",
+      "op": "encode host->bytes",
+      "impl": "CUDA (pinned, own stream)",
+      "method": "int8",
+      "time_ms": 4.615766999904736,
+      "mb_per_s": 2726.071745012194
+    },
+    {
+      "shape": "opt-1.3b block (64 tok, 12 MiB)",
+      "op": "decode bytes->fp16",
+      "impl": "CPU numpy",
+      "method": "int8",
+      "time_ms": 31.194458999380004,
+      "mb_per_s": 403.3700985245517
+    },
+    {
+      "shape": "opt-1.3b block (64 tok, 12 MiB)",
+      "op": "decode bytes->fp16",
+      "impl": "CPU torch (multi-thread)",
+      "method": "int8",
+      "time_ms": 6.877588999486761,
+      "mb_per_s": 1829.552769282811
+    },
+    {
+      "shape": "opt-1.3b block (64 tok, 12 MiB)",
+      "op": "encode host->bytes",
+      "impl": "CPU numpy",
+      "method": "int4",
+      "time_ms": 78.68920250029987,
+      "mb_per_s": 159.90646238856021
+    },
+    {
+      "shape": "opt-1.3b block (64 tok, 12 MiB)",
+      "op": "encode host->bytes",
+      "impl": "CPU torch (multi-thread)",
+      "method": "int4",
+      "time_ms": 23.677753999891138,
+      "mb_per_s": 531.4233774055534
+    },
+    {
+      "shape": "opt-1.3b block (64 tok, 12 MiB)",
+      "op": "encode host->bytes",
+      "impl": "CUDA (pinned, own stream)",
+      "method": "int4",
+      "time_ms": 15.728733999821998,
+      "mb_per_s": 799.9952189503872
+    },
+    {
+      "shape": "opt-1.3b block (64 tok, 12 MiB)",
+      "op": "decode bytes->fp16",
+      "impl": "CPU numpy",
+      "method": "int4",
+      "time_ms": 45.47958650027795,
+      "mb_per_s": 276.67164475919543
+    },
+    {
+      "shape": "opt-1.3b block (64 tok, 12 MiB)",
+      "op": "decode bytes->fp16",
+      "impl": "CPU torch (multi-thread)",
+      "method": "int4",
+      "time_ms": 10.27525700010301,
+      "mb_per_s": 1224.5836770675278
+    },
+    {
+      "shape": "qwen2.5-0.5b block (64 tok, 768 KiB)",
+      "op": "encode host->bytes",
+      "impl": "CPU numpy",
+      "method": "int8",
+      "time_ms": 2.222777500264783,
+      "mb_per_s": 353.80599268542085
+    },
+    {
+      "shape": "qwen2.5-0.5b block (64 tok, 768 KiB)",
+      "op": "encode host->bytes",
+      "impl": "CPU torch (multi-thread)",
+      "method": "int8",
+      "time_ms": 0.3806694999184401,
+      "mb_per_s": 2065.9180737319275
+    },
+    {
+      "shape": "qwen2.5-0.5b block (64 tok, 768 KiB)",
+      "op": "encode host->bytes",
+      "impl": "CUDA (pinned, own stream)",
+      "method": "int8",
+      "time_ms": 0.6345380002130696,
+      "mb_per_s": 1239.3773103201486
+    },
+    {
+      "shape": "qwen2.5-0.5b block (64 tok, 768 KiB)",
+      "op": "decode bytes->fp16",
+      "impl": "CPU numpy",
+      "method": "int8",
+      "time_ms": 1.6020110001591092,
+      "mb_per_s": 490.90299624777407
+    },
+    {
+      "shape": "qwen2.5-0.5b block (64 tok, 768 KiB)",
+      "op": "decode bytes->fp16",
+      "impl": "CPU torch (multi-thread)",
+      "method": "int8",
+      "time_ms": 0.2493049996701302,
+      "mb_per_s": 3154.4975072324
+    },
+    {
+      "shape": "qwen2.5-0.5b block (64 tok, 768 KiB)",
+      "op": "encode host->bytes",
+      "impl": "CPU numpy",
+      "method": "int4",
+      "time_ms": 3.526507000060519,
+      "mb_per_s": 223.0059375995862
+    },
+    {
+      "shape": "qwen2.5-0.5b block (64 tok, 768 KiB)",
+      "op": "encode host->bytes",
+      "impl": "CPU torch (multi-thread)",
+      "method": "int4",
+      "time_ms": 0.8208519998333941,
+      "mb_per_s": 958.0679588520461
+    },
+    {
+      "shape": "qwen2.5-0.5b block (64 tok, 768 KiB)",
+      "op": "encode host->bytes",
+      "impl": "CUDA (pinned, own stream)",
+      "method": "int4",
+      "time_ms": 0.4513600001700979,
+      "mb_per_s": 1742.36086428489
+    },
+    {
+      "shape": "qwen2.5-0.5b block (64 tok, 768 KiB)",
+      "op": "decode bytes->fp16",
+      "impl": "CPU numpy",
+      "method": "int4",
+      "time_ms": 2.281229999880452,
+      "mb_per_s": 344.74033746759994
+    },
+    {
+      "shape": "qwen2.5-0.5b block (64 tok, 768 KiB)",
+      "op": "decode bytes->fp16",
+      "impl": "CPU torch (multi-thread)",
+      "method": "int4",
+      "time_ms": 0.4554195006676309,
+      "mb_per_s": 1726.829876294526
+    }
+  ],
+  "pcie": [
+    {
+      "op": "H2D",
+      "memory": "pageable",
+      "mb": 64,
+      "time_ms": 13.43680000305176,
+      "gbps": 4.994408191292441
+    },
+    {
+      "op": "D2H",
+      "memory": "pageable",
+      "mb": 64,
+      "time_ms": 9.854432106018066,
+      "gbps": 6.810018403700489
+    },
+    {
+      "op": "H2D",
+      "memory": "pinned",
+      "mb": 64,
+      "time_ms": 5.232143878936767,
+      "gbps": 12.826265017321601
+    },
+    {
+      "op": "D2H",
+      "memory": "pinned",
+      "mb": 64,
+      "time_ms": 5.230256080627441,
+      "gbps": 12.830894504107984
+    }
+  ],
+  "assembly": [
+    {
+      "op": "assemble 16 blocks (1024 tok)",
+      "method": "fp16",
+      "impl": "CPU decode + concat + H2D",
+      "time_ms": 273.348993500349,
+      "h2d_mb": 192.0
+    },
+    {
+      "op": "assemble 16 blocks (1024 tok)",
+      "method": "fp16",
+      "impl": "CUDA BlockLoader (pipelined H2D + 1 launch)",
+      "time_ms": 32.7359279999655,
+      "h2d_mb": 192.0004425048828
+    },
+    {
+      "op": "assemble 16 blocks (1024 tok)",
+      "method": "int8",
+      "impl": "CPU decode + concat + H2D",
+      "time_ms": 264.4203144996027,
+      "h2d_mb": 192.0
+    },
+    {
+      "op": "assemble 16 blocks (1024 tok)",
+      "method": "int8",
+      "impl": "CUDA BlockLoader (pipelined H2D + 1 launch)",
+      "time_ms": 18.937003999781155,
+      "h2d_mb": 99.00044250488281
+    },
+    {
+      "op": "assemble 16 blocks (1024 tok)",
+      "method": "int4",
+      "impl": "CPU decode + concat + H2D",
+      "time_ms": 318.9490529998693,
+      "h2d_mb": 192.0
+    },
+    {
+      "op": "assemble 16 blocks (1024 tok)",
+      "method": "int4",
+      "impl": "CUDA BlockLoader (pipelined H2D + 1 launch)",
+      "time_ms": 12.951565000093979,
+      "h2d_mb": 54.00044250488281
+    }
+  ]
+}

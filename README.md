@@ -18,6 +18,16 @@ fp16 cache (OPT-1.3B). The same policy saves **62%** on Qwen2.5-0.5B (a modern g
 model) and **52%** in an 8–12K-token long-document setting. In that setting, dropping the SSD tier
 altogether makes requests **43% slower**.
 
+**GPU acceleration (CUDA).** Hand-written CUDA kernels move the KV codec and the cache-loading path onto
+the GPU, bit-identical to the CPU codec so every wear result still holds. The quantizers reach
+**177 GB/s (94% of the GPU's DRAM peak, 23× a naive kernel)**, a request's cached prefix is
+loaded **8–25× faster** with one pipelined copy and one dequantize-and-scatter launch, SSD encoding
+runs on its own CUDA stream fully hidden behind model compute, and a paged flash-decoding kernel
+attends **directly over int8 KV blocks**, 1.95× faster than the same algorithm on fp16 and **4×
+faster than PyTorch SDPA** at 32K tokens. End to end, quantized policies get **47–60% lower
+time-to-first-token** with identical SSD writes, and an int8 GPU KV cache makes long-context
+generation **2.18× faster** with half the KV memory. Details: [docs/CUDA.md](docs/CUDA.md).
+
 ---
 
 ## Contents
@@ -35,6 +45,7 @@ altogether makes requests **43% slower**.
 11. [Repository layout](#11-repository-layout)
 12. [Limitations and threats to validity](#12-limitations-and-threats-to-validity)
 13. [Future work](#13-future-work)
+14. [GPU acceleration (CUDA)](#14-gpu-acceleration-cuda)
 
 ---
 
@@ -117,6 +128,11 @@ Other findings:
 
 6. **Robustness checks:** a modern GQA model (Qwen2.5-0.5B), a long-document regime where SSD
    loading beats recomputing, and a distribution-shift test of the reuse predictor.
+
+7. **A GPU data path for compressed KV** ([§14](#14-gpu-acceleration-cuda)): CUDA quantize /
+   dequantize kernels at the DRAM-bandwidth limit, a single-launch batched loader that ships blocks
+   over PCIe still compressed, stream-overlapped encoding, and paged attention that consumes the
+   on-SSD int8 format directly, so compression saves SSD wear *and* GPU memory bandwidth.
 
 ---
 
@@ -532,12 +548,14 @@ python -m kvwear.analysis project --gb-per-chat 2 --chats-per-day 50 --tbw-tb 30
 
 ## 9. Tests
 
-`pytest` suite: **37 tests, all passing** (Windows, Python 3.10, no GPU required, ~75 s). The
-end-to-end tests use the `sim` engine and real file I/O in a temporary directory.
+`pytest` suite: **120 tests, all passing** in WSL with the GPU (37 core tests + 83 CUDA tests,
+~30 s). The 37 core tests need no GPU and also pass on Windows; the CUDA tests skip themselves
+when no GPU or `nvcc` is present. The end-to-end tests use the `sim` engine and real file I/O in a
+temporary directory.
 
 ```
-py -3.10 -m pytest -q tests        # Windows
-python -m pytest -q tests          # Linux / WSL
+py -3.10 -m pytest -q tests                        # Windows (core tests; CUDA tests skip)
+bash linux/cuda_env.sh python -m pytest -q tests   # WSL with GPU: all 118
 ```
 
 | File | What is verified |
@@ -545,6 +563,7 @@ python -m pytest -q tests          # Linux / WSL
 | `test_codecs.py` (9) | fp16 is bit-exact; int8/int4 error and size bounds for both backends (relative error ≤ 1% / 20%, size ≤ 0.53× / 0.29×); numpy and torch backends produce identical bytes; zstd/zlib round-trip; odd head dims and constant groups; malformed input rejected |
 | `test_store.py` (14) | write-through writes each unique block exactly once; spill writes only on eviction; `no_ssd` never writes; lookup returns the longest prefix and promotes it; SSD capacity eviction deletes files; async writer correctness; quantized policies write fewer bytes; reuse-aware drops dead and keeps shared blocks; ghost list proves blocks; oracle writes only reused blocks and keeps blocks the current lookup needs; refuses to wipe a foreign directory; policy-spec parsing; continuation-model Bayes estimates |
 | `test_workload.py` (7) | determinism per seed; every turn emitted once with a correct last-turn flag; context budget respected; shared system prompt yields shared blocks; each turn extends the previous prefix; gap statistics; block-hash prefix property |
+| `test_cuda.py` (83) | every quantize optimization stage (v0–v4) produces **byte-identical** output to the CPU codec on 5 shapes incl. odd group sizes and misaligned payloads (fallback paths); GPU dequantize equals CPU decode exactly; zlib/zstd blocks; the batched loader equals CPU decode + concatenate for mixed fp16 / int8 / int4 blocks; the store writes identical SSD files and counts with `codec_device=cuda`; the runner writes identical bytes; paged int8 attention v1–v3 within 2e-3 of an fp32 reference (MHA, GQA, head_dim 64/128, partial blocks); the int8 GPU generation cache appends bit-exactly and decodes within 2e-3 |
 | `test_end_to_end.py` (7) | full sim run across policies (`no_ssd` writes 0, `oracle` < `write_through`, `spill` ≤ `write_through`, int4 < 0.35× fp16, identical trace for every policy, recomputation bounds); analysis report generation; idle-rate subtraction; KV attribution via the `no_ssd` control; wear-projection arithmetic; FlexLLMGen command builder and output parser; dotted config overrides |
 
 Beyond unit tests, each campaign starts with a **validation stage**: a check that the offload
@@ -673,11 +692,19 @@ kvwear/
   runner.py           one policy x one repetition -> results/runs/<id>/
   analysis.py         reports, wear projection, trade-off plots
   quality.py          top-1 agreement / KL / perplexity of quantized KV
-linux/                setup_wsl.sh, check_offload.sh, run_sweep.sh, qwen_prelim.sh,
-                      flexllmgen-laptop.patch, pinned versions
+  cuda/               CUDA kernels + bindings + benchmarks (see docs/CUDA.md)
+    kvquant_kernels.cu   quantize v0..v4, dequantize, batched dequantize+scatter
+    kvattn_kernels.cu    paged int8 flash-decoding attention v1..v3, fp16 baseline
+    kvquant_bindings.cpp PyTorch bindings;  __init__.py: JIT build, GpuCodec, BlockLoader
+    kvcache_kernels.cu + int8_cache.py   int8 GPU KV cache for generation (transformers hook)
+    attention.py, bench.py, bench_attention.py, bench_overlap.py, bench_generate.py, compare_e2e.py
+docs/CUDA.md          GPU design, optimization steps, benchmarks
+linux/                setup_wsl.sh, check_offload.sh, run_sweep.sh, qwen_prelim.sh, cuda_env.sh,
+                      cuda_e2e.sh, flexllmgen-laptop.patch, pinned versions
 windows/              SmartLogger.psm1, KvwearWsl.psm1, log_smart.ps1, week1_check.ps1,
                       run_experiment.ps1, run_all.ps1
-tests/                pytest suite (37 tests)
+tests/                pytest suite (120 tests: 37 core + 83 CUDA)
+results/cuda/         kernel / attention / overlap / end-to-end GPU benchmarks and plots
 results/final/        SMART-bracketed campaign: raw CSVs, reports, plots
 results/prelim/       Linux-only sweeps, quality results, FlexLLMGen runs
 ```
@@ -714,6 +741,50 @@ results/prelim/       Linux-only sweeps, quality results, FlexLLMGen runs
 * Native Linux to separate KV writes from virtualization overhead.
 * An endurance budget as an explicit control target: adapt the admission threshold online to stay
   under a TBW-per-year budget.
+* Feed SSD-tier int8 blocks straight into the int8 GPU cache's block table (no fp16 round trip on
+  SSD hits), and extend the int8 GPU cache to batched decoding and OPT's attention class.
+
+---
+
+## 14. GPU acceleration (CUDA)
+
+Full write-up: [docs/CUDA.md](docs/CUDA.md). Hardware: RTX 3050 Laptop (Ampere sm_86, 16 SMs, 4 GB,
+188 GB/s theoretical DRAM bandwidth, 177 GB/s measured device-to-device copy). Switch it on for any
+experiment with `--set store.codec_device=cuda`; SSD bytes, hit/miss decisions and wear numbers are
+identical to the CPU path, only time changes.
+
+**Quantization kernels: optimization ladder** (192 MiB of OPT-1.3B KV, achieved DRAM bandwidth):
+
+| Stage | Technique | int8 | int4 |
+|---|---|---|---|
+| v0 | one thread per group (uncoalesced) | 7.7 GB/s | 9.6 GB/s |
+| v1 | warp per group, `__shfl_xor_sync` reductions, coalesced | 88 | 62 |
+| v2 | `half2` vector loads/stores | 115 | 73 |
+| v3 | group cached in registers, single global read | 128 | 80 |
+| **v4** | sub-warp per group, 128-bit loads, 8/4-byte stores | **177** | **170** |
+| PyTorch ops on the GPU (same math) | | 10.8 | 7.5 |
+
+**Load path** (16 cached OPT-1.3B blocks = 1024 tokens into the attention cache): CPU decode +
+concatenate + copy vs one pipelined pinned DMA + one dequantize/scatter kernel: fp16 273 → 33 ms
+(8.4×), int8 264 → 19 ms (14×), int4 319 → 13 ms (25×); quantized blocks cross PCIe still
+compressed.
+
+**Overlap with CUDA streams:** encoding 60 × 12 MiB blocks during 30 model steps adds +49% when done
+blocking, finishes 133% late on the CPU writer, and adds **+2%** on the GPU writer's own stream.
+
+**Paged int8 decode attention** (one layer, one decode step, 32K tokens): OPT-1.3B 3245 µs (PyTorch
+SDPA fp16) / 1563 µs (same kernel on fp16) / **803 µs int8** at 172 GB/s; Qwen2.5-0.5B with GQA head
+packing 731 / 344 / **257 µs**. Dequantizing first and then calling SDPA is 8× slower than the fused
+kernel.
+
+**End to end on the real model** (same trace, `codec_device` cpu vs cuda, 3 reps): SSD bytes are
+identical in every configuration; on OPT-1.3B with a 256 MB RAM tier, time-to-first-token drops
+**47% (`reuse_int8`) to 60% (`spill_int4`)** and mean latency **13–19%** (run noise ±2%). So the
+quantized policies that save the most SSD wear are now also faster than the uncompressed baseline.
+
+**Generation with an int8 GPU KV cache** (Qwen2.5-0.5B, HF transformers `Cache` + attention hook):
+decode is **2.18× faster at 31.7K tokens of context** (12.4 → 27.0 tok/s), KV memory is halved
+(373 → 192 MB), and greedy next-token predictions agree with fp16 on 95–100% of steps.
 
 ---
 

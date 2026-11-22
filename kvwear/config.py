@@ -36,6 +36,9 @@ class StoreConfig:
     max_pending_mb: float = 512       # writer back-pressure
     fsync: bool = False               # fsync every block file (slower, but writes hit the device at once)
     bypass_page_cache: bool = False   # fsync + fadvise(DONTNEED) so SSD reads really come from the SSD
+    # "cuda": quantize on the GPU (writer thread, own stream) and decode SSD hits on the GPU,
+    # straight into the attention cache (kvwear/cuda). Same bytes on disk as "cpu".
+    codec_device: str = "cpu"
 
 
 @dataclass

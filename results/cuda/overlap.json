@@ -1,0 +1,292 @@
+{
+  "rows": [
+    {
+      "schedule": "model only (no KV writes)",
+      "model_s": 0.6115045859996826,
+      "total_s": 0.6115045859996826,
+      "model_slowdown_pct": 0.0,
+      "total_overhead_pct": 0.0
+    },
+    {
+      "schedule": "serial",
+      "model_s": 0.9105584959997941,
+      "total_s": 0.910561031999805,
+      "model_slowdown_pct": 48.90460625266133,
+      "total_overhead_pct": 48.9050209674597
+    },
+    {
+      "schedule": "cpu-thread",
+      "model_s": 0.6148994969998967,
+      "total_s": 1.427132975999939,
+      "model_slowdown_pct": 0.5551734325367486,
+      "total_overhead_pct": 133.3805843282228
+    },
+    {
+      "schedule": "gpu-stream",
+      "model_s": 0.6244751680001173,
+      "total_s": 0.6247224859998823,
+      "model_slowdown_pct": 2.121093168783106,
+      "total_overhead_pct": 2.16153734621487
+    }
+  ],
+  "timelines": {
+    "serial": [
+      [
+        "model (default stream)",
+        "prefill",
+        4.407296180725098,
+        23.212064743041992
+      ],
+      [
+        "model (default stream)",
+        "encode",
+        23.534624099731445,
+        29.32326316833496
+      ],
+      [
+        "model (default stream)",
+        "encode",
+        29.451263427734375,
+        33.675262451171875
+      ],
+      [
+        "model (default stream)",
+        "prefill",
+        33.767425537109375,
+        52.65919876098633
+      ],
+      [
+        "model (default stream)",
+        "encode",
+        52.99430465698242,
+        58.12249755859375
+      ],
+      [
+        "model (default stream)",
+        "encode",
+        58.36601638793945,
+        62.687232971191406
+      ],
+      [
+        "model (default stream)",
+        "prefill",
+        62.854209899902344,
+        81.75411224365234
+      ],
+      [
+        "model (default stream)",
+        "encode",
+        82.0469741821289,
+        86.80262756347656
+      ],
+      [
+        "model (default stream)",
+        "encode",
+        86.81913757324219,
+        90.60073852539062
+      ],
+      [
+        "model (default stream)",
+        "prefill",
+        90.61682891845703,
+        109.47174072265625
+      ],
+      [
+        "model (default stream)",
+        "encode",
+        109.74742126464844,
+        114.01113891601562
+      ],
+      [
+        "model (default stream)",
+        "encode",
+        114.0285415649414,
+        118.18598175048828
+      ],
+      [
+        "model (default stream)",
+        "prefill",
+        118.2709732055664,
+        137.0818634033203
+      ],
+      [
+        "model (default stream)",
+        "encode",
+        137.37472534179688,
+        142.01036071777344
+      ],
+      [
+        "model (default stream)",
+        "encode",
+        142.16294860839844,
+        146.1913604736328
+      ],
+      [
+        "model (default stream)",
+        "prefill",
+        146.32354736328125,
+        165.33094787597656
+      ],
+      [
+        "model (default stream)",
+        "encode",
+        165.58181762695312,
+        170.0867156982422
+      ],
+      [
+        "model (default stream)",
+        "encode",
+        170.19801330566406,
+        174.20089721679688
+      ]
+    ],
+    "cpu-thread": [
+      [
+        "model (default stream)",
+        "prefill",
+        7.014400005340576,
+        25.746431350708008
+      ],
+      [
+        "model (default stream)",
+        "prefill",
+        25.747455596923828,
+        44.48972702026367
+      ],
+      [
+        "model (default stream)",
+        "prefill",
+        44.49177551269531,
+        63.278079986572266
+      ],
+      [
+        "model (default stream)",
+        "prefill",
+        63.27910232543945,
+        82.00908660888672
+      ],
+      [
+        "model (default stream)",
+        "prefill",
+        82.01113891601562,
+        100.75135803222656
+      ],
+      [
+        "model (default stream)",
+        "prefill",
+        100.75341033935547,
+        119.47212982177734
+      ]
+    ],
+    "gpu-stream": [
+      [
+        "model (default stream)",
+        "prefill",
+        5.438496112823486,
+        24.630271911621094
+      ],
+      [
+        "writer stream",
+        "encode",
+        8.589311599731445,
+        19.760831832885742
+      ],
+      [
+        "writer stream",
+        "encode",
+        20.605791091918945,
+        27.472415924072266
+      ],
+      [
+        "model (default stream)",
+        "prefill",
+        24.635391235351562,
+        43.642879486083984
+      ],
+      [
+        "writer stream",
+        "encode",
+        30.65318489074707,
+        37.04447937011719
+      ],
+      [
+        "writer stream",
+        "encode",
+        37.410400390625,
+        44.13481521606445
+      ],
+      [
+        "model (default stream)",
+        "prefill",
+        43.644927978515625,
+        62.650367736816406
+      ],
+      [
+        "writer stream",
+        "encode",
+        46.77423858642578,
+        54.3680305480957
+      ],
+      [
+        "writer stream",
+        "encode",
+        54.95993423461914,
+        61.26380920410156
+      ],
+      [
+        "model (default stream)",
+        "prefill",
+        62.65241622924805,
+        81.80326080322266
+      ],
+      [
+        "writer stream",
+        "encode",
+        64.9103012084961,
+        69.44032287597656
+      ],
+      [
+        "model (default stream)",
+        "prefill",
+        81.80429077148438,
+        100.959228515625
+      ],
+      [
+        "writer stream",
+        "encode",
+        69.73081970214844,
+        74.3950424194336
+      ],
+      [
+        "model (default stream)",
+        "prefill",
+        100.9612808227539,
+        119.66976165771484
+      ],
+      [
+        "writer stream",
+        "encode",
+        74.71590423583984,
+        81.39344024658203
+      ],
+      [
+        "writer stream",
+        "encode",
+        81.52230072021484,
+        85.49763488769531
+      ],
+      [
+        "writer stream",
+        "encode",
+        85.58614349365234,
+        89.78553771972656
+      ],
+      [
+        "writer stream",
+        "encode",
+        89.86243438720703,
+        93.84508514404297
+      ]
+    ]
+  }
+}

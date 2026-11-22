@@ -43,6 +43,17 @@ class HFEngine:
         self.tokenizer = HFTokenizer(cfg.model)
         gpu = torch.cuda.get_device_name(0) if self.device.startswith("cuda") else "cpu"
         self.description = f"hf:{cfg.model} on {gpu}"
+        self.loader = None          # set by enable_gpu_loader(): CUDA cache assembly
+
+    # SSD hits may arrive still quantized (EncodedBlock) once the GPU loader is on
+    accepts_encoded = True
+
+    def enable_gpu_loader(self) -> None:
+        from ..cuda import BlockLoader
+        if not self.device.startswith("cuda"):
+            raise RuntimeError("the GPU loader needs a CUDA device")
+        self.loader = BlockLoader()
+        self.description += " +cuda-codec"
 
     @property
     def bytes_per_token(self) -> int:
@@ -52,14 +63,23 @@ class HFEngine:
         if self.device.startswith("cuda"):
             self.torch.cuda.synchronize()
 
-    def build_cache(self, blocks: list[np.ndarray]):
+    def build_cache(self, blocks: list):
         from transformers import DynamicCache
         cache = DynamicCache()
-        if blocks:
-            arr = np.concatenate(blocks, axis=3)                  # [L, 2, H, T, D]
-            t = self.torch.from_numpy(arr).to(self.device, non_blocking=True)
+        if not blocks:
+            return cache
+        if self.loader is not None:
+            # CUDA path: one pinned H2D copy + one dequantize/scatter kernel for all blocks;
+            # per-layer K/V are views of one contiguous tensor (no extra copies)
+            t = self.loader.assemble(blocks, self.device)          # [L, 2, H, T, D]
             for l in range(t.shape[0]):
-                cache.update(t[l, 0].unsqueeze(0).contiguous(), t[l, 1].unsqueeze(0).contiguous(), l)
+                cache.update(t[l, 0].unsqueeze(0), t[l, 1].unsqueeze(0), l)
+            return cache
+        blocks = [b if isinstance(b, np.ndarray) else b.to_numpy() for b in blocks]
+        arr = np.concatenate(blocks, axis=3)                      # [L, 2, H, T, D]
+        t = self.torch.from_numpy(arr).to(self.device, non_blocking=True)
+        for l in range(t.shape[0]):
+            cache.update(t[l, 0].unsqueeze(0).contiguous(), t[l, 1].unsqueeze(0).contiguous(), l)
         return cache
 
     def forward_prompt(self, ids: list[int], cache, start: int):

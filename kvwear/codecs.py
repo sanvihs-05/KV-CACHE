@@ -11,8 +11,12 @@ Quantization groups run along head_dim (the last axis).
               warning, if the zstandard package is missing)
 
 The math runs on torch CPU ops when torch is installed (multi-threaded, ~10x faster than
-numpy), else numpy. Both produce the same byte format. Every block carries a small
-header, so decode() doesn't need to know the shape.
+numpy), else numpy, or on the GPU with device="cuda" (CUDA kernels in kvwear/cuda/).
+All three produce the same bytes. Every block carries a small header, so decode() doesn't
+need to know the shape.
+
+EncodedBlock is a block read from the SSD but not decoded yet: with the CUDA path the
+engine dequantizes it on the GPU, straight into the attention cache.
 """
 from __future__ import annotations
 
@@ -125,13 +129,40 @@ def _dec_int4(payload, n: int, g: int, use_torch: bool) -> np.ndarray:
     return (q[:n].astype(np.float32).reshape(groups, g) * s[:, None] + mn[:, None]).astype(np.float16)
 
 
+# --------------------------------------------------------------- encoded (not yet decoded) block
+
+class EncodedBlock:
+    """A KV block as stored on the SSD, header parsed, payload decompressed but still quantized.
+
+    `nbytes` is the *logical* fp16 size, so RAM-tier accounting (and therefore every hit/miss
+    and write count) is identical whether blocks are decoded on the CPU or on the GPU.
+    """
+    __slots__ = ("data", "method", "shape", "group", "payload", "nbytes")
+
+    def __init__(self, data):
+        method, comp, shape, g, off = _parse_header(data)
+        if comp == 2:
+            if _zstd is None:
+                raise RuntimeError("block was written with zstd; pip install zstandard")
+            payload = _zstd.ZstdDecompressor().decompress(bytes(data[off:]))
+        elif comp == 1:
+            payload = zlib.decompress(memoryview(data)[off:])
+        else:
+            payload = memoryview(data)[off:]
+        self.data, self.method, self.shape, self.group, self.payload = data, method, shape, g, payload
+        self.nbytes = int(np.prod(shape)) * 2
+
+    def to_numpy(self) -> np.ndarray:
+        return Codec.decode(self.data)
+
+
 # --------------------------------------------------------------- codec
 
 class Codec:
     """Encode/decode float16 KV blocks. `lossy` codecs change values slightly."""
 
     def __init__(self, method: str = "fp16", group: int = 64, compress: str | None = None,
-                 level: int = 3, backend: str = "auto"):
+                 level: int = 3, backend: str = "auto", device: str = "cpu"):
         if method not in _METHODS:
             raise ValueError(f"unknown quantization '{method}'")
         if compress not in (None, "zstd", "zlib"):
@@ -141,6 +172,31 @@ class Codec:
             compress = "zlib"
         self.method, self.group, self.compress, self.level = method, group, compress, level
         self.use_torch = _torch is not None and backend in ("auto", "torch")
+        self._gpu = None
+        self.device = "cpu"
+        if device != "cpu":
+            self.to_device(device, min_bytes=0)
+
+    # Blocks smaller than this are encoded on the CPU even with device="cuda": below ~2 MiB the
+    # fixed cost of a GPU round trip (pinned copy, 2 DMAs, launch, stream sync ~0.5 ms) exceeds
+    # the CPU's encode time (measured: 768 KiB Qwen block 0.43 ms CPU vs 0.8 ms GPU; 12 MiB OPT
+    # block 19.5 ms CPU vs 4.5 ms GPU). Output bytes are identical either way.
+    gpu_min_bytes = 2 << 20
+
+    def to_device(self, device: str, min_bytes: int | None = None) -> "Codec":
+        """'cuda': quantize on the GPU (int8/int4). Output bytes are identical to the CPU path."""
+        if min_bytes is not None:
+            self.gpu_min_bytes = min_bytes
+        if device == "cpu":
+            self._gpu, self.device = None, "cpu"
+            return self
+        if device != "cuda":
+            raise ValueError(f"unknown codec device '{device}'")
+        if self.method != "fp16":
+            from .cuda import GpuCodec
+            self._gpu = GpuCodec(self.method)
+        self.device = "cuda"
+        return self
 
     @property
     def name(self) -> str:
@@ -155,6 +211,8 @@ class Codec:
         g = _pick_group(arr.shape[-1], self.group)
         if self.method == "fp16":
             payload = arr.tobytes()
+        elif self._gpu is not None and g % 2 == 0 and g <= 256 and arr.nbytes >= self.gpu_min_bytes:
+            payload = self._gpu.encode_payload(arr, g)
         elif self.method == "int8":
             payload = _enc_int8(arr, g, self.use_torch)
         else:

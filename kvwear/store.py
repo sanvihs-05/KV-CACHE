@@ -19,7 +19,7 @@ from pathlib import Path
 
 import numpy as np
 
-from .codecs import Codec
+from .codecs import Codec, EncodedBlock
 from .policy import Policy, RequestContext
 
 MARKER = ".kvwear_offload"
@@ -97,8 +97,9 @@ class RamTier:
 
 class SsdTier:
     def __init__(self, root: Path, capacity_bytes: int, codec: Codec, *, async_writes=True,
-                 max_pending_bytes=512 << 20, fsync=False, bypass_page_cache=False):
+                 max_pending_bytes=512 << 20, fsync=False, bypass_page_cache=False, read_encoded=False):
         self.root, self.capacity, self.codec = root, capacity_bytes, codec
+        self.read_encoded = read_encoded          # True: hand SSD hits back still quantized (GPU decodes)
         self.fsync, self.bypass = fsync or bypass_page_cache, bypass_page_cache
         self.index: OrderedDict[str, int] = OrderedDict()   # hash -> bytes on disk (estimate while pending)
         self.pending: dict[str, np.ndarray] = {}
@@ -142,7 +143,7 @@ class SsdTier:
     def _do_write(self, h: str, arr: np.ndarray) -> None:
         try:
             t0 = time.perf_counter()
-            data = self.codec.encode(arr)
+            data = arr.data if isinstance(arr, EncodedBlock) else self.codec.encode(arr)
             t1 = time.perf_counter()
             p = self.path(h)
             p.parent.mkdir(exist_ok=True)
@@ -208,7 +209,7 @@ class SsdTier:
                 f.readinto(data)
         except FileNotFoundError:
             return None
-        out = Codec.decode(data)
+        out = EncodedBlock(data) if self.read_encoded else Codec.decode(data)
         with self.lock:
             self.stats.reads += 1
             self.stats.bytes_read += len(data)
@@ -243,14 +244,15 @@ class StoreStats:
 
 class TieredKVStore:
     def __init__(self, policy: Policy, offload_dir, *, ram_bytes: int, ssd_bytes: int,
-                 async_writes=True, max_pending_bytes=512 << 20, fsync=False, bypass_page_cache=False):
+                 async_writes=True, max_pending_bytes=512 << 20, fsync=False, bypass_page_cache=False,
+                 read_encoded=False):
         self.policy = policy
         self.adm = policy.admission
         self.root = prepare_offload_dir(offload_dir)
         self.ram = RamTier(ram_bytes)
         self.ssd = SsdTier(self.root, ssd_bytes, policy.codec, async_writes=async_writes,
                            max_pending_bytes=max_pending_bytes, fsync=fsync,
-                           bypass_page_cache=bypass_page_cache)
+                           bypass_page_cache=bypass_page_cache, read_encoded=read_encoded)
         self.stats = StoreStats()
 
     def begin_request(self, ctx: RequestContext, hashes: list[str]) -> None:
