@@ -3,648 +3,1134 @@
     "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
     "tokens": 1024,
     "impl": "torch SDPA fp16",
-    "time_us": 83.96799862384796,
+    "time_us": 103.82399708032608,
     "kv_mb_read": 0.5,
-    "gbps": 6.243902541355745,
-    "rel_err_vs_fp32": 0.000278411025647074
+    "gbps": 5.049776686928853,
+    "rel_err_vs_fp32": 0.00027820130344480276
   },
   {
     "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
     "tokens": 1024,
     "impl": "kvwear dense fp16 kernel",
-    "time_us": 122.99200519919395,
+    "time_us": 27.53600012511015,
     "kv_mb_read": 0.5,
-    "gbps": 4.262781138911263,
-    "rel_err_vs_fp32": 0.0002120462158927694
+    "gbps": 19.040092882695056,
+    "rel_err_vs_fp32": 0.00020444922847673297
   },
   {
     "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
     "tokens": 1024,
     "impl": "dequantize + SDPA (unfused int8)",
-    "time_us": 270.1760083436966,
+    "time_us": 171.50400578975677,
     "kv_mb_read": 0.2578125,
-    "gbps": 1.0005921756609115,
-    "rel_err_vs_fp32": 0.008190112188458443
+    "gbps": 1.576266389552436,
+    "rel_err_vs_fp32": 0.00866961944848299
   },
   {
     "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
     "tokens": 1024,
     "impl": "kvwear paged int8 v1 (warp/token)",
-    "time_us": 148.8960012793541,
+    "time_us": 74.24000278115271,
     "kv_mb_read": 0.2578125,
-    "gbps": 1.8156028212792894,
-    "rel_err_vs_fp32": 0.008164497092366219
+    "gbps": 3.641379173932764,
+    "rel_err_vs_fp32": 0.008655697107315063
   },
   {
     "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
     "tokens": 1024,
     "impl": "kvwear paged int8 v2 (sub-warp/token)",
-    "time_us": 75.18399879336357,
+    "time_us": 56.20799958705903,
     "kv_mb_read": 0.2578125,
-    "gbps": 3.59565870848389,
-    "rel_err_vs_fp32": 0.008164497092366219
+    "gbps": 4.809564510142084,
+    "rel_err_vs_fp32": 0.008655786514282227
   },
   {
     "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
     "tokens": 1024,
     "impl": "kvwear paged int8 v3 (+ GQA head packing)",
-    "time_us": 83.3279974758625,
+    "time_us": 57.05600045621396,
     "kv_mb_read": 0.2578125,
-    "gbps": 3.244239729609581,
-    "rel_err_vs_fp32": 0.008164499886333942
+    "gbps": 4.738081846579166,
+    "rel_err_vs_fp32": 0.008655767887830734
+  },
+  {
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 1024,
+    "impl": "kvwear paged int8 v4 (tensor cores, WMMA)",
+    "time_us": 57.360000908374786,
+    "kv_mb_read": 0.2578125,
+    "gbps": 4.712970636660675,
+    "rel_err_vs_fp32": 0.008676611818373203
+  },
+  {
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 1024,
+    "impl": "kvwear paged int8 v5 (tensor cores, mma.sync)",
+    "time_us": 51.83999985456467,
+    "kv_mb_read": 0.2578125,
+    "gbps": 5.214814829444799,
+    "rel_err_vs_fp32": 0.008656658232212067
   },
   {
     "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
     "tokens": 2048,
     "impl": "torch SDPA fp16",
-    "time_us": 128.51200252771378,
+    "time_us": 123.21599945425986,
     "kv_mb_read": 1.0,
-    "gbps": 8.159362389313584,
-    "rel_err_vs_fp32": 0.0002764446835499257
+    "gbps": 8.510063665792456,
+    "rel_err_vs_fp32": 0.0002671281108632684
   },
   {
     "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
     "tokens": 2048,
     "impl": "kvwear dense fp16 kernel",
-    "time_us": 77.79200002551079,
+    "time_us": 46.65599949657917,
     "kv_mb_read": 1.0,
-    "gbps": 13.479226651276921,
-    "rel_err_vs_fp32": 0.0002141504519386217
+    "gbps": 22.474623013421496,
+    "rel_err_vs_fp32": 0.00021059672872070223
   },
   {
     "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
     "tokens": 2048,
     "impl": "dequantize + SDPA (unfused int8)",
-    "time_us": 208.8959962129593,
+    "time_us": 204.22399789094925,
     "kv_mb_read": 0.515625,
-    "gbps": 2.5882353410393337,
-    "rel_err_vs_fp32": 0.008293612860143185
+    "gbps": 2.6474459690516197,
+    "rel_err_vs_fp32": 0.007919354364275932
   },
   {
     "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
     "tokens": 2048,
     "impl": "kvwear paged int8 v1 (warp/token)",
-    "time_us": 71.58400118350983,
+    "time_us": 94.2080020904541,
     "kv_mb_read": 0.515625,
-    "gbps": 7.552972606462096,
-    "rel_err_vs_fp32": 0.008270276710391045
+    "gbps": 5.739130307432612,
+    "rel_err_vs_fp32": 0.007906610146164894
   },
   {
     "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
     "tokens": 2048,
     "impl": "kvwear paged int8 v2 (sub-warp/token)",
-    "time_us": 63.391998410224915,
+    "time_us": 63.98399919271469,
     "kv_mb_read": 0.515625,
-    "gbps": 8.529025958468466,
-    "rel_err_vs_fp32": 0.00827023945748806
+    "gbps": 8.450112634746995,
+    "rel_err_vs_fp32": 0.007906618528068066
   },
   {
     "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
     "tokens": 2048,
     "impl": "kvwear paged int8 v3 (+ GQA head packing)",
-    "time_us": 90.11200070381165,
+    "time_us": 76.28800347447395,
     "kv_mb_read": 0.515625,
-    "gbps": 5.999999953137542,
-    "rel_err_vs_fp32": 0.00827026180922985
+    "gbps": 7.087247999364795,
+    "rel_err_vs_fp32": 0.00790663342922926
+  },
+  {
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 2048,
+    "impl": "kvwear paged int8 v4 (tensor cores, WMMA)",
+    "time_us": 52.880000323057175,
+    "kv_mb_read": 0.515625,
+    "gbps": 10.22450825826209,
+    "rel_err_vs_fp32": 0.007929637096822262
+  },
+  {
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 2048,
+    "impl": "kvwear paged int8 v5 (tensor cores, mma.sync)",
+    "time_us": 66.56000018119812,
+    "kv_mb_read": 0.515625,
+    "gbps": 8.123076900963248,
+    "rel_err_vs_fp32": 0.007901357486844063
   },
   {
     "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
     "tokens": 4096,
     "impl": "torch SDPA fp16",
-    "time_us": 136.1759975552559,
+    "time_us": 147.45600521564484,
     "kv_mb_read": 2.0,
-    "gbps": 15.400305763495819,
-    "rel_err_vs_fp32": 0.00026986977900378406
+    "gbps": 14.222221719170076,
+    "rel_err_vs_fp32": 0.00028131893486715853
   },
   {
     "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
     "tokens": 4096,
     "impl": "kvwear dense fp16 kernel",
-    "time_us": 70.65600156784058,
+    "time_us": 145.4080045223236,
     "kv_mb_read": 2.0,
-    "gbps": 29.68115876167169,
-    "rel_err_vs_fp32": 0.00020390012650750577
+    "gbps": 14.422534762713404,
+    "rel_err_vs_fp32": 0.00020595200476236641
   },
   {
     "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
     "tokens": 4096,
     "impl": "dequantize + SDPA (unfused int8)",
-    "time_us": 321.53600454330444,
+    "time_us": 350.20799934864044,
     "kv_mb_read": 1.03125,
-    "gbps": 3.363057277320757,
-    "rel_err_vs_fp32": 0.008847284130752087
+    "gbps": 3.0877193039885307,
+    "rel_err_vs_fp32": 0.008419772610068321
   },
   {
     "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
     "tokens": 4096,
     "impl": "kvwear paged int8 v1 (warp/token)",
-    "time_us": 129.98399883508682,
-    "kv_mb_read": 1.03125,
-    "gbps": 8.319054727435503,
-    "rel_err_vs_fp32": 0.008863436989486217
-  },
-  {
-    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
-    "tokens": 4096,
-    "impl": "kvwear paged int8 v2 (sub-warp/token)",
-    "time_us": 56.32000043988228,
-    "kv_mb_read": 1.03125,
-    "gbps": 19.199999850040136,
-    "rel_err_vs_fp32": 0.008864055387675762
-  },
-  {
-    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
-    "tokens": 4096,
-    "impl": "kvwear paged int8 v3 (+ GQA head packing)",
-    "time_us": 119.80800330638885,
-    "kv_mb_read": 1.03125,
-    "gbps": 9.025640776556841,
-    "rel_err_vs_fp32": 0.008863445371389389
-  },
-  {
-    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
-    "tokens": 8192,
-    "impl": "torch SDPA fp16",
-    "time_us": 282.62399137020105,
-    "kv_mb_read": 4.0,
-    "gbps": 14.840580163295485,
-    "rel_err_vs_fp32": 0.00028382232994772494
-  },
-  {
-    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
-    "tokens": 8192,
-    "impl": "kvwear dense fp16 kernel",
-    "time_us": 158.52800011634827,
-    "kv_mb_read": 4.0,
-    "gbps": 26.45781184977846,
-    "rel_err_vs_fp32": 0.00021561530593317002
-  },
-  {
-    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
-    "tokens": 8192,
-    "impl": "dequantize + SDPA (unfused int8)",
-    "time_us": 711.1679911613464,
-    "kv_mb_read": 2.0625,
-    "gbps": 3.0410367548577417,
-    "rel_err_vs_fp32": 0.008612890727818012
-  },
-  {
-    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
-    "tokens": 8192,
-    "impl": "kvwear paged int8 v1 (warp/token)",
-    "time_us": 273.39199185371393,
-    "kv_mb_read": 2.0625,
-    "gbps": 7.9105755268691516,
-    "rel_err_vs_fp32": 0.00861222855746746
-  },
-  {
-    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
-    "tokens": 8192,
-    "impl": "kvwear paged int8 v2 (sub-warp/token)",
-    "time_us": 161.27999871969226,
-    "kv_mb_read": 2.0625,
-    "gbps": 13.409523915974189,
-    "rel_err_vs_fp32": 0.008612241595983505
-  },
-  {
-    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
-    "tokens": 8192,
-    "impl": "kvwear paged int8 v3 (+ GQA head packing)",
-    "time_us": 146.43199741840363,
-    "kv_mb_read": 2.0625,
-    "gbps": 14.769231029612333,
-    "rel_err_vs_fp32": 0.008612260222434998
-  },
-  {
-    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
-    "tokens": 16384,
-    "impl": "torch SDPA fp16",
-    "time_us": 458.75200629234314,
-    "kv_mb_read": 8.0,
-    "gbps": 18.285714034903414,
-    "rel_err_vs_fp32": 0.0003075247223023325
-  },
-  {
-    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
-    "tokens": 16384,
-    "impl": "kvwear dense fp16 kernel",
-    "time_us": 290.3040051460266,
-    "kv_mb_read": 8.0,
-    "gbps": 28.895943050390994,
-    "rel_err_vs_fp32": 0.00022629291925113648
-  },
-  {
-    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
-    "tokens": 16384,
-    "impl": "dequantize + SDPA (unfused int8)",
-    "time_us": 1390.0799751281738,
-    "kv_mb_read": 4.125,
-    "gbps": 3.1116022656186915,
-    "rel_err_vs_fp32": 0.00853848084807396
-  },
-  {
-    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
-    "tokens": 16384,
-    "impl": "kvwear paged int8 v1 (warp/token)",
-    "time_us": 494.0800070762634,
-    "kv_mb_read": 4.125,
-    "gbps": 8.754404019696267,
-    "rel_err_vs_fp32": 0.008500557392835617
-  },
-  {
-    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
-    "tokens": 16384,
-    "impl": "kvwear paged int8 v2 (sub-warp/token)",
-    "time_us": 213.50400149822232,
-    "kv_mb_read": 4.125,
-    "gbps": 20.2589926635919,
-    "rel_err_vs_fp32": 0.008500483818352222
-  },
-  {
-    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
-    "tokens": 16384,
-    "impl": "kvwear paged int8 v3 (+ GQA head packing)",
     "time_us": 173.5680028796196,
-    "kv_mb_read": 4.125,
-    "gbps": 24.92035356885406,
-    "rel_err_vs_fp32": 0.008500483818352222
+    "kv_mb_read": 1.03125,
+    "gbps": 6.230088392213515,
+    "rel_err_vs_fp32": 0.008426675572991371
   },
   {
     "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
-    "tokens": 32768,
-    "impl": "torch SDPA fp16",
-    "time_us": 730.976015329361,
-    "kv_mb_read": 16.0,
-    "gbps": 22.951800945808834,
-    "rel_err_vs_fp32": 0.00029228697530925274
-  },
-  {
-    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
-    "tokens": 32768,
-    "impl": "kvwear dense fp16 kernel",
-    "time_us": 344.4000035524368,
-    "kv_mb_read": 16.0,
-    "gbps": 48.71433166941178,
-    "rel_err_vs_fp32": 0.00020691733516287059
-  },
-  {
-    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
-    "tokens": 32768,
-    "impl": "dequantize + SDPA (unfused int8)",
-    "time_us": 2426.8319606781006,
-    "kv_mb_read": 8.25,
-    "gbps": 3.5646275226995217,
-    "rel_err_vs_fp32": 0.009086974896490574
-  },
-  {
-    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
-    "tokens": 32768,
-    "impl": "kvwear paged int8 v1 (warp/token)",
-    "time_us": 702.8959989547728,
-    "kv_mb_read": 8.25,
-    "gbps": 12.307300102524305,
-    "rel_err_vs_fp32": 0.009068639948964119
-  },
-  {
-    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
-    "tokens": 32768,
+    "tokens": 4096,
     "impl": "kvwear paged int8 v2 (sub-warp/token)",
-    "time_us": 309.7600042819977,
-    "kv_mb_read": 8.25,
-    "gbps": 27.927272341217346,
-    "rel_err_vs_fp32": 0.009069044142961502
+    "time_us": 71.68000191450119,
+    "kv_mb_read": 1.03125,
+    "gbps": 15.085713882789937,
+    "rel_err_vs_fp32": 0.008426702581346035
   },
   {
     "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
-    "tokens": 32768,
+    "tokens": 4096,
     "impl": "kvwear paged int8 v3 (+ GQA head packing)",
-    "time_us": 256.8800002336502,
-    "kv_mb_read": 8.25,
-    "gbps": 33.6762379014775,
-    "rel_err_vs_fp32": 0.009068721905350685
+    "time_us": 110.08000001311302,
+    "kv_mb_read": 1.03125,
+    "gbps": 9.823255812783316,
+    "rel_err_vs_fp32": 0.008426650427281857
   },
   {
-    "model": "opt-1.3b (Hq 32, Hkv 32)",
-    "tokens": 1024,
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 4096,
+    "impl": "kvwear paged int8 v4 (tensor cores, WMMA)",
+    "time_us": 71.55200093984604,
+    "kv_mb_read": 1.03125,
+    "gbps": 15.112701053728584,
+    "rel_err_vs_fp32": 0.008446697145700455
+  },
+  {
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 4096,
+    "impl": "kvwear paged int8 v5 (tensor cores, mma.sync)",
+    "time_us": 92.52800047397615,
+    "kv_mb_read": 1.03125,
+    "gbps": 11.686667759605722,
+    "rel_err_vs_fp32": 0.008421096950769424
+  },
+  {
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 8192,
     "impl": "torch SDPA fp16",
-    "time_us": 100.8639968931675,
-    "kv_mb_read": 8.0,
-    "gbps": 83.16751525209727,
-    "rel_err_vs_fp32": 0.0002673881535883993
+    "time_us": 268.2880014181137,
+    "kv_mb_read": 4.0,
+    "gbps": 15.633587703623698,
+    "rel_err_vs_fp32": 0.00026907134451903403
   },
   {
-    "model": "opt-1.3b (Hq 32, Hkv 32)",
-    "tokens": 1024,
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 8192,
     "impl": "kvwear dense fp16 kernel",
-    "time_us": 85.91999858617784,
-    "kv_mb_read": 8.0,
-    "gbps": 97.63277628067253,
-    "rel_err_vs_fp32": 0.00019905813678633422
+    "time_us": 134.14399325847626,
+    "kv_mb_read": 4.0,
+    "gbps": 31.267177143878346,
+    "rel_err_vs_fp32": 0.00019611154857557267
   },
   {
-    "model": "opt-1.3b (Hq 32, Hkv 32)",
-    "tokens": 1024,
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 8192,
     "impl": "dequantize + SDPA (unfused int8)",
-    "time_us": 210.4320004582405,
-    "kv_mb_read": 4.125,
-    "gbps": 20.554744480787065,
-    "rel_err_vs_fp32": 0.008217697963118553
+    "time_us": 868.3519959449767,
+    "kv_mb_read": 2.0625,
+    "gbps": 2.490566049366275,
+    "rel_err_vs_fp32": 0.008175319992005825
   },
   {
-    "model": "opt-1.3b (Hq 32, Hkv 32)",
-    "tokens": 1024,
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 8192,
     "impl": "kvwear paged int8 v1 (warp/token)",
-    "time_us": 96.62400186061859,
-    "kv_mb_read": 4.125,
-    "gbps": 44.765026460396584,
-    "rel_err_vs_fp32": 0.008203738369047642
+    "time_us": 294.91199553012854,
+    "kv_mb_read": 2.0625,
+    "gbps": 7.333333444481941,
+    "rel_err_vs_fp32": 0.008167603053152561
   },
   {
-    "model": "opt-1.3b (Hq 32, Hkv 32)",
-    "tokens": 1024,
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 8192,
     "impl": "kvwear paged int8 v2 (sub-warp/token)",
-    "time_us": 65.45599922537805,
-    "kv_mb_read": 4.125,
-    "gbps": 66.0806656561283,
-    "rel_err_vs_fp32": 0.008205035701394081
+    "time_us": 130.048006772995,
+    "kv_mb_read": 2.0625,
+    "gbps": 16.629920393744097,
+    "rel_err_vs_fp32": 0.008167603053152561
   },
   {
-    "model": "opt-1.3b (Hq 32, Hkv 32)",
-    "tokens": 1024,
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 8192,
     "impl": "kvwear paged int8 v3 (+ GQA head packing)",
-    "time_us": 75.26400312781334,
-    "kv_mb_read": 4.125,
-    "gbps": 57.4693853667954,
-    "rel_err_vs_fp32": 0.008205035701394081
+    "time_us": 124.32000041007996,
+    "kv_mb_read": 2.0625,
+    "gbps": 17.39613893875637,
+    "rel_err_vs_fp32": 0.008167603053152561
   },
   {
-    "model": "opt-1.3b (Hq 32, Hkv 32)",
-    "tokens": 2048,
-    "impl": "torch SDPA fp16",
-    "time_us": 168.96000504493713,
-    "kv_mb_read": 16.0,
-    "gbps": 99.29696673208478,
-    "rel_err_vs_fp32": 0.00028797637787647545
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 8192,
+    "impl": "kvwear paged int8 v4 (tensor cores, WMMA)",
+    "time_us": 114.17600139975549,
+    "kv_mb_read": 2.0625,
+    "gbps": 18.94170380365616,
+    "rel_err_vs_fp32": 0.008171509951353073
   },
   {
-    "model": "opt-1.3b (Hq 32, Hkv 32)",
-    "tokens": 2048,
-    "impl": "kvwear dense fp16 kernel",
-    "time_us": 106.30399733781815,
-    "kv_mb_read": 16.0,
-    "gbps": 157.82300214623658,
-    "rel_err_vs_fp32": 0.00020675375708378851
-  },
-  {
-    "model": "opt-1.3b (Hq 32, Hkv 32)",
-    "tokens": 2048,
-    "impl": "dequantize + SDPA (unfused int8)",
-    "time_us": 408.06400775909424,
-    "kv_mb_read": 8.25,
-    "gbps": 21.199497714846444,
-    "rel_err_vs_fp32": 0.008454704657196999
-  },
-  {
-    "model": "opt-1.3b (Hq 32, Hkv 32)",
-    "tokens": 2048,
-    "impl": "kvwear paged int8 v1 (warp/token)",
-    "time_us": 133.11999291181567,
-    "kv_mb_read": 8.25,
-    "gbps": 64.9846188448239,
-    "rel_err_vs_fp32": 0.00844596978276968
-  },
-  {
-    "model": "opt-1.3b (Hq 32, Hkv 32)",
-    "tokens": 2048,
-    "impl": "kvwear paged int8 v2 (sub-warp/token)",
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 8192,
+    "impl": "kvwear paged int8 v5 (tensor cores, mma.sync)",
     "time_us": 95.23200243711472,
+    "kv_mb_read": 2.0625,
+    "gbps": 22.709676838183725,
+    "rel_err_vs_fp32": 0.0081705367192626
+  },
+  {
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 16384,
+    "impl": "torch SDPA fp16",
+    "time_us": 450.4159986972809,
+    "kv_mb_read": 8.0,
+    "gbps": 18.624134187644348,
+    "rel_err_vs_fp32": 0.0002738161711022258
+  },
+  {
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 16384,
+    "impl": "kvwear dense fp16 kernel",
+    "time_us": 281.5999984741211,
+    "kv_mb_read": 8.0,
+    "gbps": 29.7890910705062,
+    "rel_err_vs_fp32": 0.00020605795725714415
+  },
+  {
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 16384,
+    "impl": "dequantize + SDPA (unfused int8)",
+    "time_us": 1676.800012588501,
+    "kv_mb_read": 4.125,
+    "gbps": 2.579541965367029,
+    "rel_err_vs_fp32": 0.007986705750226974
+  },
+  {
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 16384,
+    "impl": "kvwear paged int8 v1 (warp/token)",
+    "time_us": 524.2879986763,
+    "kv_mb_read": 4.125,
+    "gbps": 8.250000020829248,
+    "rel_err_vs_fp32": 0.007993217557668686
+  },
+  {
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 16384,
+    "impl": "kvwear paged int8 v2 (sub-warp/token)",
+    "time_us": 201.21599733829498,
+    "kv_mb_read": 4.125,
+    "gbps": 21.496183490460496,
+    "rel_err_vs_fp32": 0.007993271574378014
+  },
+  {
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 16384,
+    "impl": "kvwear paged int8 v3 (+ GQA head packing)",
+    "time_us": 179.6479970216751,
+    "kv_mb_read": 4.125,
+    "gbps": 24.076950880104327,
+    "rel_err_vs_fp32": 0.007993214763700962
+  },
+  {
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 16384,
+    "impl": "kvwear paged int8 v4 (tensor cores, WMMA)",
+    "time_us": 113.56800049543381,
+    "kv_mb_read": 4.125,
+    "gbps": 38.086221304687925,
+    "rel_err_vs_fp32": 0.007990801706910133
+  },
+  {
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 16384,
+    "impl": "kvwear paged int8 v5 (tensor cores, mma.sync)",
+    "time_us": 89.9839997291565,
+    "kv_mb_read": 4.125,
+    "gbps": 48.06827894980198,
+    "rel_err_vs_fp32": 0.00800096895545721
+  },
+  {
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 32768,
+    "impl": "torch SDPA fp16",
+    "time_us": 1061.887979507446,
+    "kv_mb_read": 16.0,
+    "gbps": 15.799421712808225,
+    "rel_err_vs_fp32": 0.00028745137387886643
+  },
+  {
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 32768,
+    "impl": "kvwear dense fp16 kernel",
+    "time_us": 494.59201097488403,
+    "kv_mb_read": 16.0,
+    "gbps": 33.92132429905336,
+    "rel_err_vs_fp32": 0.00020567014871630818
+  },
+  {
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 32768,
+    "impl": "dequantize + SDPA (unfused int8)",
+    "time_us": 3481.9839000701904,
     "kv_mb_read": 8.25,
-    "gbps": 90.8387073527349,
-    "rel_err_vs_fp32": 0.008446126244962215
+    "gbps": 2.484431935433595,
+    "rel_err_vs_fp32": 0.008635017089545727
+  },
+  {
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 32768,
+    "impl": "kvwear paged int8 v1 (warp/token)",
+    "time_us": 1005.568027496338,
+    "kv_mb_read": 8.25,
+    "gbps": 8.60285108859182,
+    "rel_err_vs_fp32": 0.008619950152933598
+  },
+  {
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 32768,
+    "impl": "kvwear paged int8 v2 (sub-warp/token)",
+    "time_us": 386.0480040311814,
+    "kv_mb_read": 8.25,
+    "gbps": 22.40848782966709,
+    "rel_err_vs_fp32": 0.00861983560025692
+  },
+  {
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 32768,
+    "impl": "kvwear paged int8 v3 (+ GQA head packing)",
+    "time_us": 276.4159888029099,
+    "kv_mb_read": 8.25,
+    "gbps": 31.296134631951983,
+    "rel_err_vs_fp32": 0.00861983560025692
+  },
+  {
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 32768,
+    "impl": "kvwear paged int8 v4 (tensor cores, WMMA)",
+    "time_us": 130.048006772995,
+    "kv_mb_read": 8.25,
+    "gbps": 66.51968157497639,
+    "rel_err_vs_fp32": 0.008631324395537376
+  },
+  {
+    "model": "qwen2.5-0.5b (Hq 14, Hkv 2)",
+    "tokens": 32768,
+    "impl": "kvwear paged int8 v5 (tensor cores, mma.sync)",
+    "time_us": 115.71200191974638,
+    "kv_mb_read": 8.25,
+    "gbps": 74.76106070656218,
+    "rel_err_vs_fp32": 0.00861391518265009
+  },
+  {
+    "model": "opt-1.3b (Hq 32, Hkv 32)",
+    "tokens": 1024,
+    "impl": "torch SDPA fp16",
+    "time_us": 103.42399775981902,
+    "kv_mb_read": 8.0,
+    "gbps": 81.1089126479216,
+    "rel_err_vs_fp32": 0.00027928617782890797
+  },
+  {
+    "model": "opt-1.3b (Hq 32, Hkv 32)",
+    "tokens": 1024,
+    "impl": "kvwear dense fp16 kernel",
+    "time_us": 70.62400132417679,
+    "kv_mb_read": 8.0,
+    "gbps": 118.77843003393124,
+    "rel_err_vs_fp32": 0.00020397650951053947
+  },
+  {
+    "model": "opt-1.3b (Hq 32, Hkv 32)",
+    "tokens": 1024,
+    "impl": "dequantize + SDPA (unfused int8)",
+    "time_us": 203.77600193023682,
+    "kv_mb_read": 4.125,
+    "gbps": 21.226130452205076,
+    "rel_err_vs_fp32": 0.008427193388342857
+  },
+  {
+    "model": "opt-1.3b (Hq 32, Hkv 32)",
+    "tokens": 1024,
+    "impl": "kvwear paged int8 v1 (warp/token)",
+    "time_us": 82.2880007326603,
+    "kv_mb_read": 4.125,
+    "gbps": 52.56387275773548,
+    "rel_err_vs_fp32": 0.008423657156527042
+  },
+  {
+    "model": "opt-1.3b (Hq 32, Hkv 32)",
+    "tokens": 1024,
+    "impl": "kvwear paged int8 v2 (sub-warp/token)",
+    "time_us": 82.94399827718735,
+    "kv_mb_read": 4.125,
+    "gbps": 52.148149231306554,
+    "rel_err_vs_fp32": 0.008423530496656895
   },
   {
     "model": "opt-1.3b (Hq 32, Hkv 32)",
     "tokens": 2048,
-    "impl": "kvwear paged int8 v3 (+ GQA head packing)",
-    "time_us": 77.47200131416321,
+    "impl": "torch SDPA fp16",
+    "time_us": 218.51199865341187,
+    "kv_mb_read": 16.0,
+    "gbps": 76.77938101060904,
+    "rel_err_vs_fp32": 0.00028463455964811146
+  },
+  {
+    "model": "opt-1.3b (Hq 32, Hkv 32)",
+    "tokens": 2048,
+    "impl": "kvwear dense fp16 kernel",
+    "time_us": 121.34400010108948,
+    "kv_mb_read": 16.0,
+    "gbps": 138.2616032603442,
+    "rel_err_vs_fp32": 0.0002065246953861788
+  },
+  {
+    "model": "opt-1.3b (Hq 32, Hkv 32)",
+    "tokens": 2048,
+    "impl": "dequantize + SDPA (unfused int8)",
+    "time_us": 418.11199486255646,
     "kv_mb_read": 8.25,
-    "gbps": 111.66294730040096,
-    "rel_err_vs_fp32": 0.008446126244962215
+    "gbps": 20.690035460101335,
+    "rel_err_vs_fp32": 0.008336958475410938
+  },
+  {
+    "model": "opt-1.3b (Hq 32, Hkv 32)",
+    "tokens": 2048,
+    "impl": "kvwear paged int8 v1 (warp/token)",
+    "time_us": 215.03999829292297,
+    "kv_mb_read": 8.25,
+    "gbps": 40.22857174792258,
+    "rel_err_vs_fp32": 0.008323288522660732
+  },
+  {
+    "model": "opt-1.3b (Hq 32, Hkv 32)",
+    "tokens": 2048,
+    "impl": "kvwear paged int8 v2 (sub-warp/token)",
+    "time_us": 71.16800174117088,
+    "kv_mb_read": 8.25,
+    "gbps": 121.55395386063674,
+    "rel_err_vs_fp32": 0.008323296904563904
   },
   {
     "model": "opt-1.3b (Hq 32, Hkv 32)",
     "tokens": 4096,
     "impl": "torch SDPA fp16",
-    "time_us": 315.90399146080017,
+    "time_us": 339.48799967765814,
     "kv_mb_read": 32.0,
-    "gbps": 106.21718277391155,
-    "rel_err_vs_fp32": 0.0002824811963364482
+    "gbps": 98.83834489543,
+    "rel_err_vs_fp32": 0.0002812411985360086
   },
   {
     "model": "opt-1.3b (Hq 32, Hkv 32)",
     "tokens": 4096,
     "impl": "kvwear dense fp16 kernel",
-    "time_us": 232.44799673557281,
+    "time_us": 216.5760025382042,
     "kv_mb_read": 32.0,
-    "gbps": 144.3524249347294,
-    "rel_err_vs_fp32": 0.00020927023433614522
+    "gbps": 154.93144026462937,
+    "rel_err_vs_fp32": 0.00020500618848018348
   },
   {
     "model": "opt-1.3b (Hq 32, Hkv 32)",
     "tokens": 4096,
     "impl": "dequantize + SDPA (unfused int8)",
-    "time_us": 829.4399976730347,
+    "time_us": 827.3440003395079,
     "kv_mb_read": 16.5,
-    "gbps": 20.859259317779195,
-    "rel_err_vs_fp32": 0.009110274724662304
+    "gbps": 20.91210426726993,
+    "rel_err_vs_fp32": 0.00870335940271616
   },
   {
     "model": "opt-1.3b (Hq 32, Hkv 32)",
     "tokens": 4096,
     "impl": "kvwear paged int8 v1 (warp/token)",
-    "time_us": 266.2400007247925,
+    "time_us": 354.78399693965906,
     "kv_mb_read": 16.5,
-    "gbps": 64.98461520770599,
-    "rel_err_vs_fp32": 0.009085486643016338
+    "gbps": 48.76630329789819,
+    "rel_err_vs_fp32": 0.008691053837537766
   },
   {
     "model": "opt-1.3b (Hq 32, Hkv 32)",
     "tokens": 4096,
     "impl": "kvwear paged int8 v2 (sub-warp/token)",
-    "time_us": 111.9839996099472,
+    "time_us": 165.8879965543747,
     "kv_mb_read": 16.5,
-    "gbps": 154.49978622180913,
-    "rel_err_vs_fp32": 0.009085316210985184
-  },
-  {
-    "model": "opt-1.3b (Hq 32, Hkv 32)",
-    "tokens": 4096,
-    "impl": "kvwear paged int8 v3 (+ GQA head packing)",
-    "time_us": 149.37599748373032,
-    "kv_mb_read": 16.5,
-    "gbps": 115.82519475315597,
-    "rel_err_vs_fp32": 0.009085316210985184
+    "gbps": 104.29629846261311,
+    "rel_err_vs_fp32": 0.008690680377185345
   },
   {
     "model": "opt-1.3b (Hq 32, Hkv 32)",
     "tokens": 8192,
     "impl": "torch SDPA fp16",
-    "time_us": 794.6239709854126,
+    "time_us": 785.4079902172089,
     "kv_mb_read": 64.0,
-    "gbps": 84.45361133112854,
-    "rel_err_vs_fp32": 0.00028808071510866284
+    "gbps": 85.4445903732666,
+    "rel_err_vs_fp32": 0.0002916945668403059
   },
   {
     "model": "opt-1.3b (Hq 32, Hkv 32)",
     "tokens": 8192,
     "impl": "kvwear dense fp16 kernel",
-    "time_us": 410.6239974498749,
+    "time_us": 438.7840032577515,
     "kv_mb_read": 64.0,
-    "gbps": 163.4314224613529,
-    "rel_err_vs_fp32": 0.00020152716024313122
+    "gbps": 152.94282266844345,
+    "rel_err_vs_fp32": 0.00021176875452511013
   },
   {
     "model": "opt-1.3b (Hq 32, Hkv 32)",
     "tokens": 8192,
     "impl": "dequantize + SDPA (unfused int8)",
-    "time_us": 1794.0479516983032,
+    "time_us": 1665.0240421295166,
     "kv_mb_read": 33.0,
-    "gbps": 19.28767175216453,
-    "rel_err_vs_fp32": 0.008676808327436447
+    "gbps": 20.782287297031324,
+    "rel_err_vs_fp32": 0.008539372123777866
   },
   {
     "model": "opt-1.3b (Hq 32, Hkv 32)",
     "tokens": 8192,
     "impl": "kvwear paged int8 v1 (warp/token)",
-    "time_us": 484.8159998655319,
+    "time_us": 687.1039867401123,
     "kv_mb_read": 33.0,
-    "gbps": 71.37348604335965,
-    "rel_err_vs_fp32": 0.008683821186423302
+    "gbps": 50.36065670957622,
+    "rel_err_vs_fp32": 0.008534383028745651
   },
   {
     "model": "opt-1.3b (Hq 32, Hkv 32)",
     "tokens": 8192,
     "impl": "kvwear paged int8 v2 (sub-warp/token)",
-    "time_us": 243.19999665021896,
+    "time_us": 321.53600454330444,
     "kv_mb_read": 33.0,
-    "gbps": 142.282107222919,
-    "rel_err_vs_fp32": 0.008684111759066582
-  },
-  {
-    "model": "opt-1.3b (Hq 32, Hkv 32)",
-    "tokens": 8192,
-    "impl": "kvwear paged int8 v3 (+ GQA head packing)",
-    "time_us": 253.32799553871155,
-    "kv_mb_read": 33.0,
-    "gbps": 136.5936991149178,
-    "rel_err_vs_fp32": 0.008684111759066582
+    "gbps": 107.61783287426422,
+    "rel_err_vs_fp32": 0.008534620516002178
   },
   {
     "model": "opt-1.3b (Hq 32, Hkv 32)",
     "tokens": 16384,
     "impl": "torch SDPA fp16",
-    "time_us": 1570.303976535797,
+    "time_us": 1777.6640057563782,
     "kv_mb_read": 128.0,
-    "gbps": 85.47244992405479,
-    "rel_err_vs_fp32": 0.00029298767913132906
+    "gbps": 75.50230390297615,
+    "rel_err_vs_fp32": 0.00029166866443119943
   },
   {
     "model": "opt-1.3b (Hq 32, Hkv 32)",
     "tokens": 16384,
     "impl": "kvwear dense fp16 kernel",
-    "time_us": 749.567985534668,
+    "time_us": 815.1040077209473,
     "kv_mb_read": 128.0,
-    "gbps": 179.06011274515984,
-    "rel_err_vs_fp32": 0.0002053942735074088
+    "gbps": 164.66331502316666,
+    "rel_err_vs_fp32": 0.00020840451179537922
   },
   {
     "model": "opt-1.3b (Hq 32, Hkv 32)",
     "tokens": 16384,
     "impl": "dequantize + SDPA (unfused int8)",
-    "time_us": 3331.0720920562744,
+    "time_us": 3496.9600439071655,
     "kv_mb_read": 66.0,
-    "gbps": 20.775898595841873,
-    "rel_err_vs_fp32": 0.008484158664941788
+    "gbps": 19.79033650115026,
+    "rel_err_vs_fp32": 0.008565419353544712
   },
   {
     "model": "opt-1.3b (Hq 32, Hkv 32)",
     "tokens": 16384,
     "impl": "kvwear paged int8 v1 (warp/token)",
-    "time_us": 843.2639837265015,
+    "time_us": 1397.1999883651733,
     "kv_mb_read": 66.0,
-    "gbps": 82.0692183415316,
-    "rel_err_vs_fp32": 0.00848350115120411
+    "gbps": 49.531932848765706,
+    "rel_err_vs_fp32": 0.008546898141503334
   },
   {
     "model": "opt-1.3b (Hq 32, Hkv 32)",
     "tokens": 16384,
     "impl": "kvwear paged int8 v2 (sub-warp/token)",
-    "time_us": 429.05600368976593,
+    "time_us": 573.4399855136871,
     "kv_mb_read": 66.0,
-    "gbps": 161.29832796848646,
-    "rel_err_vs_fp32": 0.008483229205012321
-  },
-  {
-    "model": "opt-1.3b (Hq 32, Hkv 32)",
-    "tokens": 16384,
-    "impl": "kvwear paged int8 v3 (+ GQA head packing)",
-    "time_us": 432.06401169300074,
-    "kv_mb_read": 66.0,
-    "gbps": 160.1753770901283,
-    "rel_err_vs_fp32": 0.008483229205012321
+    "gbps": 120.68571733449193,
+    "rel_err_vs_fp32": 0.008547044359147549
   },
   {
     "model": "opt-1.3b (Hq 32, Hkv 32)",
     "tokens": 32768,
     "impl": "torch SDPA fp16",
-    "time_us": 3244.9920177459717,
+    "time_us": 3578.368067741394,
     "kv_mb_read": 256.0,
-    "gbps": 82.72299424220463,
-    "rel_err_vs_fp32": 0.0002871754695661366
+    "gbps": 75.01616684429894,
+    "rel_err_vs_fp32": 0.0002902552078012377
   },
   {
     "model": "opt-1.3b (Hq 32, Hkv 32)",
     "tokens": 32768,
     "impl": "kvwear dense fp16 kernel",
-    "time_us": 1562.6239776611328,
+    "time_us": 1830.399990081787,
     "kv_mb_read": 256.0,
-    "gbps": 171.7850614335142,
-    "rel_err_vs_fp32": 0.00020530550682451576
+    "gbps": 146.6539868086459,
+    "rel_err_vs_fp32": 0.00020294851856306195
   },
   {
     "model": "opt-1.3b (Hq 32, Hkv 32)",
     "tokens": 32768,
     "impl": "dequantize + SDPA (unfused int8)",
-    "time_us": 6680.464029312134,
+    "time_us": 7100.928068161011,
     "kv_mb_read": 132.0,
-    "gbps": 20.718924822090816,
-    "rel_err_vs_fp32": 0.00832456536591053
+    "gbps": 19.49210450681917,
+    "rel_err_vs_fp32": 0.008636273443698883
   },
   {
     "model": "opt-1.3b (Hq 32, Hkv 32)",
     "tokens": 32768,
     "impl": "kvwear paged int8 v1 (warp/token)",
-    "time_us": 1642.9280042648315,
+    "time_us": 3002.336025238037,
     "kv_mb_read": 132.0,
-    "gbps": 84.2471682512563,
-    "rel_err_vs_fp32": 0.008329334668815136
+    "gbps": 46.101445952914666,
+    "rel_err_vs_fp32": 0.008620765060186386
   },
   {
     "model": "opt-1.3b (Hq 32, Hkv 32)",
     "tokens": 32768,
     "impl": "kvwear paged int8 v2 (sub-warp/token)",
-    "time_us": 802.8159737586975,
+    "time_us": 1310.7199668884277,
     "kv_mb_read": 132.0,
-    "gbps": 172.40816890073805,
-    "rel_err_vs_fp32": 0.00832931138575077
+    "gbps": 105.60000266768046,
+    "rel_err_vs_fp32": 0.00862092711031437
   },
   {
-    "model": "opt-1.3b (Hq 32, Hkv 32)",
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 1024,
+    "impl": "torch SDPA fp16",
+    "time_us": 253.40799987316134,
+    "kv_mb_read": 4.0,
+    "gbps": 16.551584804344696,
+    "rel_err_vs_fp32": 0.00027556877466849983
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 1024,
+    "impl": "kvwear dense fp16 kernel",
+    "time_us": 54.27199974656105,
+    "kv_mb_read": 4.0,
+    "gbps": 77.28301922882015,
+    "rel_err_vs_fp32": 0.00020810267596971244
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 1024,
+    "impl": "dequantize + SDPA (unfused int8)",
+    "time_us": 456.03199303150177,
+    "kv_mb_read": 2.0625,
+    "gbps": 4.742404114288985,
+    "rel_err_vs_fp32": 0.008303197100758553
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 1024,
+    "impl": "kvwear paged int8 v1 (warp/token)",
+    "time_us": 155.12000024318695,
+    "kv_mb_read": 2.0625,
+    "gbps": 13.94203195338757,
+    "rel_err_vs_fp32": 0.008314304053783417
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 1024,
+    "impl": "kvwear paged int8 v2 (sub-warp/token)",
+    "time_us": 135.15199720859528,
+    "kv_mb_read": 2.0625,
+    "gbps": 16.001894494108587,
+    "rel_err_vs_fp32": 0.008314300328493118
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 1024,
+    "impl": "kvwear paged int8 v3 (+ GQA head packing)",
+    "time_us": 74.12800192832947,
+    "kv_mb_read": 2.0625,
+    "gbps": 29.175047805699542,
+    "rel_err_vs_fp32": 0.008314471691846848
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 1024,
+    "impl": "kvwear paged int8 v4 (tensor cores, WMMA)",
+    "time_us": 98.27200323343277,
+    "kv_mb_read": 2.0625,
+    "gbps": 22.007163066197062,
+    "rel_err_vs_fp32": 0.008307797834277153
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 1024,
+    "impl": "kvwear paged int8 v5 (tensor cores, mma.sync)",
+    "time_us": 131.58399611711502,
+    "kv_mb_read": 2.0625,
+    "gbps": 16.43579815037021,
+    "rel_err_vs_fp32": 0.00831297505646944
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 2048,
+    "impl": "torch SDPA fp16",
+    "time_us": 340.47999978065496,
+    "kv_mb_read": 8.0,
+    "gbps": 24.63759400083451,
+    "rel_err_vs_fp32": 0.000280982960248366
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 2048,
+    "impl": "kvwear dense fp16 kernel",
+    "time_us": 96.67200222611427,
+    "kv_mb_read": 8.0,
+    "gbps": 86.77391392369407,
+    "rel_err_vs_fp32": 0.00020791588758584112
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 2048,
+    "impl": "dequantize + SDPA (unfused int8)",
+    "time_us": 1108.4640026092532,
+    "kv_mb_read": 4.125,
+    "gbps": 3.902134836871872,
+    "rel_err_vs_fp32": 0.008359015919268131
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 2048,
+    "impl": "kvwear paged int8 v1 (warp/token)",
+    "time_us": 243.71200054883954,
+    "kv_mb_read": 4.125,
+    "gbps": 17.74789911969559,
+    "rel_err_vs_fp32": 0.008362142369151115
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 2048,
+    "impl": "kvwear paged int8 v2 (sub-warp/token)",
+    "time_us": 138.60800117254254,
+    "kv_mb_read": 4.125,
+    "gbps": 31.20581758202882,
+    "rel_err_vs_fp32": 0.00836185459047556
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 2048,
+    "impl": "kvwear paged int8 v3 (+ GQA head packing)",
+    "time_us": 112.09600046277045,
+    "kv_mb_read": 4.125,
+    "gbps": 38.58635439394247,
+    "rel_err_vs_fp32": 0.008361903950572014
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 2048,
+    "impl": "kvwear paged int8 v4 (tensor cores, WMMA)",
+    "time_us": 135.16800105571747,
+    "kv_mb_read": 4.125,
+    "gbps": 31.99999975006689,
+    "rel_err_vs_fp32": 0.008358650840818882
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 2048,
+    "impl": "kvwear paged int8 v5 (tensor cores, mma.sync)",
+    "time_us": 150.52799880504608,
+    "kv_mb_read": 4.125,
+    "gbps": 28.73469410565898,
+    "rel_err_vs_fp32": 0.008365035988390446
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 4096,
+    "impl": "torch SDPA fp16",
+    "time_us": 782.831996679306,
+    "kv_mb_read": 16.0,
+    "gbps": 21.431438764852803,
+    "rel_err_vs_fp32": 0.0002779527858365327
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 4096,
+    "impl": "kvwear dense fp16 kernel",
+    "time_us": 210.33599972724915,
+    "kv_mb_read": 16.0,
+    "gbps": 79.76388265325797,
+    "rel_err_vs_fp32": 0.0002005892019951716
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 4096,
+    "impl": "dequantize + SDPA (unfused int8)",
+    "time_us": 2466.815948486328,
+    "kv_mb_read": 8.25,
+    "gbps": 3.506849388300825,
+    "rel_err_vs_fp32": 0.008262301795184612
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 4096,
+    "impl": "kvwear paged int8 v1 (warp/token)",
+    "time_us": 449.44000244140625,
+    "kv_mb_read": 8.25,
+    "gbps": 19.247846104058805,
+    "rel_err_vs_fp32": 0.00825831200927496
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 4096,
+    "impl": "kvwear paged int8 v2 (sub-warp/token)",
+    "time_us": 274.4320034980774,
+    "kv_mb_read": 8.25,
+    "gbps": 31.522387657897944,
+    "rel_err_vs_fp32": 0.008257689885795116
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 4096,
+    "impl": "kvwear paged int8 v3 (+ GQA head packing)",
+    "time_us": 238.97600173950195,
+    "kv_mb_read": 8.25,
+    "gbps": 36.19924987041098,
+    "rel_err_vs_fp32": 0.008258475922048092
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 4096,
+    "impl": "kvwear paged int8 v4 (tensor cores, WMMA)",
+    "time_us": 184.32000279426575,
+    "kv_mb_read": 8.25,
+    "gbps": 46.933332621830495,
+    "rel_err_vs_fp32": 0.008264887146651745
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 4096,
+    "impl": "kvwear paged int8 v5 (tensor cores, mma.sync)",
+    "time_us": 115.08800089359283,
+    "kv_mb_read": 8.25,
+    "gbps": 75.16641120561513,
+    "rel_err_vs_fp32": 0.00826121587306261
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 8192,
+    "impl": "torch SDPA fp16",
+    "time_us": 1962.4799489974973,
+    "kv_mb_read": 32.0,
+    "gbps": 17.097974436447497,
+    "rel_err_vs_fp32": 0.0002841452369466424
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 8192,
+    "impl": "kvwear dense fp16 kernel",
+    "time_us": 377.8560012578964,
+    "kv_mb_read": 32.0,
+    "gbps": 88.80216772605455,
+    "rel_err_vs_fp32": 0.00020615229732356966
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 8192,
+    "impl": "dequantize + SDPA (unfused int8)",
+    "time_us": 5018.54395866394,
+    "kv_mb_read": 16.5,
+    "gbps": 3.4475146860337724,
+    "rel_err_vs_fp32": 0.008325998671352863
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 8192,
+    "impl": "kvwear paged int8 v1 (warp/token)",
+    "time_us": 845.8240032196045,
+    "kv_mb_read": 16.5,
+    "gbps": 20.455205733275868,
+    "rel_err_vs_fp32": 0.008308986201882362
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 8192,
+    "impl": "kvwear paged int8 v2 (sub-warp/token)",
+    "time_us": 479.7440022230148,
+    "kv_mb_read": 16.5,
+    "gbps": 36.0640339844357,
+    "rel_err_vs_fp32": 0.008308954536914825
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 8192,
+    "impl": "kvwear paged int8 v3 (+ GQA head packing)",
+    "time_us": 336.8159979581833,
+    "kv_mb_read": 16.5,
+    "gbps": 51.36782131752552,
+    "rel_err_vs_fp32": 0.008309124037623405
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 8192,
+    "impl": "kvwear paged int8 v4 (tensor cores, WMMA)",
+    "time_us": 286.1279994249344,
+    "kv_mb_read": 16.5,
+    "gbps": 60.46770688213981,
+    "rel_err_vs_fp32": 0.008317588828504086
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 8192,
+    "impl": "kvwear paged int8 v5 (tensor cores, mma.sync)",
+    "time_us": 183.2960024476051,
+    "kv_mb_read": 16.5,
+    "gbps": 94.39106019208252,
+    "rel_err_vs_fp32": 0.008300852961838245
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 16384,
+    "impl": "torch SDPA fp16",
+    "time_us": 4109.823942184449,
+    "kv_mb_read": 64.0,
+    "gbps": 16.32889022597167,
+    "rel_err_vs_fp32": 0.00028756086248904467
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 16384,
+    "impl": "kvwear dense fp16 kernel",
+    "time_us": 881.6640079021454,
+    "kv_mb_read": 64.0,
+    "gbps": 76.1161433363721,
+    "rel_err_vs_fp32": 0.00020826407126151025
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 16384,
+    "impl": "dequantize + SDPA (unfused int8)",
+    "time_us": 10062.335968017578,
+    "kv_mb_read": 33.0,
+    "gbps": 3.4388643064575866,
+    "rel_err_vs_fp32": 0.008469936437904835
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 16384,
+    "impl": "kvwear paged int8 v1 (warp/token)",
+    "time_us": 1736.7039918899534,
+    "kv_mb_read": 33.0,
+    "gbps": 19.9245283949302,
+    "rel_err_vs_fp32": 0.008457104675471783
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 16384,
+    "impl": "kvwear paged int8 v2 (sub-warp/token)",
+    "time_us": 975.8079946041107,
+    "kv_mb_read": 33.0,
+    "gbps": 35.4608777457686,
+    "rel_err_vs_fp32": 0.008457099087536335
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 16384,
+    "impl": "kvwear paged int8 v3 (+ GQA head packing)",
+    "time_us": 617.9839968681335,
+    "kv_mb_read": 33.0,
+    "gbps": 55.993372280453485,
+    "rel_err_vs_fp32": 0.0084571847692132
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 16384,
+    "impl": "kvwear paged int8 v4 (tensor cores, WMMA)",
+    "time_us": 573.9520192146301,
+    "kv_mb_read": 33.0,
+    "gbps": 60.28902563553864,
+    "rel_err_vs_fp32": 0.00847226195037365
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 16384,
+    "impl": "kvwear paged int8 v5 (tensor cores, mma.sync)",
+    "time_us": 308.62399935722357,
+    "kv_mb_read": 33.0,
+    "gbps": 112.12027603837768,
+    "rel_err_vs_fp32": 0.00846440065652132
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 32768,
+    "impl": "torch SDPA fp16",
+    "time_us": 7593.983888626099,
+    "kv_mb_read": 128.0,
+    "gbps": 17.674218166438937,
+    "rel_err_vs_fp32": 0.0002939910627901554
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 32768,
+    "impl": "kvwear dense fp16 kernel",
+    "time_us": 2018.8159942626949,
+    "kv_mb_read": 128.0,
+    "gbps": 66.48338847197341,
+    "rel_err_vs_fp32": 0.00020650395890697837
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 32768,
+    "impl": "dequantize + SDPA (unfused int8)",
+    "time_us": 20956.671714782715,
+    "kv_mb_read": 66.0,
+    "gbps": 3.302338126105324,
+    "rel_err_vs_fp32": 0.008531629107892513
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 32768,
+    "impl": "kvwear paged int8 v1 (warp/token)",
+    "time_us": 3431.3279390335083,
+    "kv_mb_read": 66.0,
+    "gbps": 20.168872585082337,
+    "rel_err_vs_fp32": 0.008529097773134708
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 32768,
+    "impl": "kvwear paged int8 v2 (sub-warp/token)",
+    "time_us": 1901.4880061149597,
+    "kv_mb_read": 66.0,
+    "gbps": 36.39571523850883,
+    "rel_err_vs_fp32": 0.008529165759682655
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
     "tokens": 32768,
     "impl": "kvwear paged int8 v3 (+ GQA head packing)",
-    "time_us": 804.7839999198914,
-    "kv_mb_read": 132.0,
-    "gbps": 171.98656038611307,
-    "rel_err_vs_fp32": 0.00832931138575077
+    "time_us": 1363.4560108184814,
+    "kv_mb_read": 66.0,
+    "gbps": 50.75779156120753,
+    "rel_err_vs_fp32": 0.008529079146683216
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 32768,
+    "impl": "kvwear paged int8 v4 (tensor cores, WMMA)",
+    "time_us": 1200.6399631500244,
+    "kv_mb_read": 66.0,
+    "gbps": 57.640939935423795,
+    "rel_err_vs_fp32": 0.008524139411747456
+  },
+  {
+    "model": "llama-3-8b shape (Hq 32, Hkv 8, D 128)",
+    "tokens": 32768,
+    "impl": "kvwear paged int8 v5 (tensor cores, mma.sync)",
+    "time_us": 582.1439921855927,
+    "kv_mb_read": 66.0,
+    "gbps": 118.88126808656733,
+    "rel_err_vs_fp32": 0.008532778359949589
   }
 ]

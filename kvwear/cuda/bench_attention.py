@@ -24,7 +24,8 @@ from ..codecs import Codec
 from .attention import PagedInt8KV, dense_fp16_decode, reference
 from .bench import cuda_time
 
-MODELS = {"qwen2.5-0.5b (Hq 14, Hkv 2)": (14, 2, 64), "opt-1.3b (Hq 32, Hkv 32)": (32, 32, 64)}
+MODELS = {"qwen2.5-0.5b (Hq 14, Hkv 2)": (14, 2, 64), "opt-1.3b (Hq 32, Hkv 32)": (32, 32, 64),
+          "llama-3-8b shape (Hq 32, Hkv 8, D 128)": (32, 8, 128)}
 TB = 64
 
 
@@ -90,13 +91,23 @@ def main(argv=None):
             def fused():
                 return paged.decode(q, 0, variant=3)
 
+            def fused_v4():
+                return paged.decode(q, 0, variant=4)
+
+            def fused_v5():
+                return paged.decode(q, 0, variant=5)
+
             res = {}
             for name, fn in (("torch SDPA fp16", sdpa), ("kvwear dense fp16 kernel", dense),
                              ("dequantize + SDPA (unfused int8)", unfused),
                              ("kvwear paged int8 v1 (warp/token)", fused_v1),
                              ("kvwear paged int8 v2 (sub-warp/token)", fused_v2),
-                             ("kvwear paged int8 v3 (+ GQA head packing)", fused)):
-                t = cuda_time(fn, args.iters)
+                             ("kvwear paged int8 v3 (+ GQA head packing)", fused),
+                             ("kvwear paged int8 v4 (tensor cores, WMMA)", fused_v4),
+                             ("kvwear paged int8 v5 (tensor cores, mma.sync)", fused_v5)):
+                if hq == hkv and ("v3" in name or "v4" in name or "v5" in name):
+                    continue                    # GQA kernels: for MHA they fall back to v2
+                t = min(cuda_time(fn, args.iters) for _ in range(3))
                 o = fn().reshape(hq, d).float()
                 err = ((o - ref).norm() / ref.norm()).item()
                 res[name] = t
@@ -118,10 +129,12 @@ def main(argv=None):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-    fig, axes = plt.subplots(1, len(MODELS), figsize=(12, 4))
+    fig, axes = plt.subplots(1, len(MODELS), figsize=(17, 4.6))
     colors = {"torch SDPA fp16": "#9aa5b1", "kvwear dense fp16 kernel": "#c9a227",
               "dequantize + SDPA (unfused int8)": "#b06030", "kvwear paged int8 v1 (warp/token)": "#7fb3e0",
-              "kvwear paged int8 v2 (sub-warp/token)": "#3a7fc4", "kvwear paged int8 v3 (+ GQA head packing)": "#0b3d75"}
+              "kvwear paged int8 v2 (sub-warp/token)": "#3a7fc4", "kvwear paged int8 v3 (+ GQA head packing)": "#0b3d75",
+              "kvwear paged int8 v4 (tensor cores, WMMA)": "#b8336a",
+              "kvwear paged int8 v5 (tensor cores, mma.sync)": "#c0392b"}
     for ax, mname in zip(np.atleast_1d(axes), MODELS):
         for impl, c in colors.items():
             rr = [r for r in rows if r["model"] == mname and r["impl"] == impl]

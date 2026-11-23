@@ -14,7 +14,7 @@ test = ["pytest>=7"]
 packages = ["kvwear", "kvwear.engines", "kvwear.cuda"]
 
 [tool.setuptools.package-data]
-"kvwear.cuda" = ["*.cu", "*.cpp"]
+"kvwear.cuda" = ["*.cu", "*.cpp", "*.h"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

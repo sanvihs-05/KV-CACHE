@@ -11,13 +11,16 @@ on an RTX 3050 Laptop GPU (Ampere, sm_86, 16 SMs, 4 GB, 128-bit GDDR6, **188 GB/
 | Quantize kernels (5 optimization stages) | `kvquant_kernels.cu` | fp16 → int8 / int4 KV blocks, bit-identical to the CPU codec | **177 GB/s** (= memcpy ceiling, 94% of peak), **23×** over naive, **16×** over PyTorch ops |
 | Batched dequantize + scatter | `kvquant_kernels.cu` | all cached blocks of a request → attention cache in **one launch**, DMA pipelined with host copies | load path **8–25×** faster than CPU decode + concat + copy |
 | GPU codec on its own stream | `__init__.py` (`GpuCodec`) | SSD writer thread encodes on a private CUDA stream with pinned buffers | **4×** faster than multi-threaded CPU encode; encoding fully hidden behind model compute (+2% vs +49% blocking) |
-| Paged int8 decode attention (3 stages) | `kvattn_kernels.cu` | flash-decoding over int8 blocks via a block table, no dequantize pass | **1.95×** vs fp16 kernel, **4.0×** vs PyTorch SDPA (OPT, 32K tokens); **2.8×** vs SDPA on Qwen (GQA) |
+| Paged int8 decode attention (5 stages) | `kvattn_kernels.cu` | flash-decoding over int8 blocks via a block table, no dequantize pass; v4/v5 run GQA on the **tensor cores** (WMMA, then raw `mma.sync` PTX, FlashAttention-2 style) | MHA: **1.95×** vs fp16 kernel, **4.0×** vs PyTorch SDPA (OPT, 32K); GQA: v5 is **2.3–2.4×** faster than the best CUDA-core kernel and **9–13×** faster than SDPA at 32K |
+| Profiling: roofline + occupancy + Nsight Compute | `kvprof_kernels.cu`, `roofline.py`, `linux/profile_ncu.sh` | measured FP32/DRAM ceilings, every kernel on the roofline, registers/spills/occupancy from the CUDA runtime, one-command Nsight Compute report | the profile is what exposed v3 as latency-bound (18% of bandwidth) and led to v4/v5 |
 | int8 GPU KV cache for generation | `kvcache_kernels.cu`, `int8_cache.py` | HF transformers `Cache` + attention hook: KV stays int8 on the GPU | Qwen2.5-0.5B decode **2.18× faster** at 31.7K context, KV memory halved, 95–100% next-token agreement |
 | End to end (real model, same trace) | `store.codec_device=cuda` | GPU codec + loader inside kvwear's experiments | TTFT **−47% to −60%**, latency **−13% to −19%** for quantized policies on OPT-1.3B; identical SSD bytes |
 
-All kernels are verified by `tests/test_cuda.py` (83 tests): byte-for-byte equality with the CPU
+All kernels are verified by `tests/test_cuda.py` (126 tests): byte-for-byte equality with the CPU
 codec for every optimization stage and shape, exact equality of the GPU load path with the CPU
-path, identical SSD files from the store, and attention within 2e-3 of an fp32 reference.
+path, identical SSD files from the store, CUDA-core attention within 2e-3 and tensor-core attention
+within 4e-3 of an fp32 reference (R = 2..16 query heads per KV head, D = 64/128, scale groups of
+64/128, context lengths not divisible by 16, many and few splits).
 
 ---
 
@@ -174,44 +177,170 @@ handles one contiguous chunk of tokens with an **online softmax** (running max *
 weighted V accumulator, rescaled by `exp(m_old − m_new)` as new tokens arrive), so scores are never
 written to memory. Partial states of the warps are merged in **shared memory**; kernel 2 merges the
 splits of each head with the same log-sum-exp rescaling. Tokens per split is chosen at run time so
-the grid has ≥ 8 CUDA blocks per SM.
+the grid has ≥ 8 CUDA blocks per SM (v1–v3) or ~4 longer ones (v5, which does more work per warp).
 
-| Stage | Idea |
-|---|---|
-| v1 | one warp per token: each lane holds 2 of 64 dims, 5-step shuffle reduction per token |
-| v2 | one **sub-warp of 8 lanes per token** (8 int8 values = one 8-byte load per lane): 4 tokens in flight per warp, 3-step reduction, per-sub-warp softmax states; uniform loop trip count so full-mask shuffles stay legal |
-| v3 | v2 + **GQA head packing**: one CUDA block per *KV* head scores each loaded K/V row against all R = Hq/Hkv query heads held in registers (R is a template parameter so the per-head state stays in registers) |
+| Stage | Idea | Hardware unit |
+|---|---|---|
+| v1 | one warp per token: each lane holds 2 of 64 dims, 5-step shuffle reduction per token | CUDA cores |
+| v2 | one **sub-warp of 8 lanes per token** (8 int8 values = one 8-byte load per lane): 4 tokens in flight per warp, 3-step reduction, per-sub-warp softmax states; uniform loop trip count so full-mask shuffles stay legal | CUDA cores |
+| v3 | v2 + **GQA head packing**: one CUDA block per *KV* head scores each loaded K/V row against all R = Hq/Hkv query heads held in registers (R is a template parameter so the per-head state stays in registers) | CUDA cores |
+| v4 | GQA as **matrix products on the tensor cores** (WMMA 16×16×16, fp16 in / fp32 accumulate): int8 K/V tiles dequantized into padded **shared memory**, `S = Q·Kᵀ` and `O += P·V` as MMAs, online softmax in between, next tile **prefetched into registers** while the MMAs run | tensor cores + smem |
+| **v5** | **register-resident tensor-core decode** (FlashAttention-2 design, raw `mma.sync.m16n8k16` PTX): S, P and O never leave registers, no shared memory and no `__syncthreads` in the main loop, int8 fed to the MMAs as exact fp16 integers, scales applied to S and P | tensor cores |
 
-One layer, one decode step (µs; lower is better):
+### 5.1 Why v4 and v5 exist: what the profile showed
 
-| Context | Model | PyTorch SDPA fp16 | kvwear fp16 kernel | dequantize + SDPA | **kvwear int8 (best)** | int8 DRAM GB/s |
-|---|---|---|---|---|---|---|
-| 8K | OPT-1.3B (32 heads) | 795 | 411 | 1794 | **243** (v2) | 142 |
-| 16K | OPT-1.3B | 1570 | 750 | 3331 | **429** (v2) | 161 |
-| 32K | OPT-1.3B | 3245 | 1563 | 6681 | **803** (v2) | **172 (92% of peak)** |
-| 16K | Qwen2.5-0.5B (14 q / 2 kv heads) | 459 | 290 | 1390 | **174** (v3) | — |
-| 32K | Qwen2.5-0.5B | 731 | 344 | 2427 | **257** (v3) | — |
+With grouped-query attention (Qwen2.5-0.5B: 14 query heads share 2 KV heads, R = 7) the roofline
+report (§6) put v3 at **18% of the DRAM bandwidth** and only ~400 GFLOP/s: neither memory- nor
+compute-bound, i.e. **latency-bound**. The static report explained it: keeping R = 7 query heads'
+state in registers costs **168 registers per thread**, so only 3 blocks (12 warps) fit on an SM
+(25% occupancy), and every token costs R × 3 dependent warp shuffles plus R exponentials.
 
-* At long contexts int8 is **1.95× faster than the same algorithm in fp16** (it reads half the bytes)
-  and **4× faster than PyTorch SDPA** on OPT; on Qwen, GQA packing (v3) adds 1.2× over v2.
-* "Dequantize + SDPA" (expand int8 to fp16 with the scatter kernel, then attend) is the slowest:
-  fusing the dequantization into attention is what makes int8 KV pay off.
-* v1 → v2 is the same lesson as the quantizer: v1 was latency-bound (2-byte loads, long dependent
-  shuffle chain, 84 GB/s); v2's wider loads and more tokens in flight reach 172 GB/s.
-* Accuracy: relative error vs an fp32 reference on the original fp16 KV is 8.5e-3 (the int8
-  quantization itself); against the dequantized KV the kernel is within 2e-3 (tests).
-* At 1–2K tokens all variants are dominated by launch overhead (~60–90 µs for two kernels), and on
-  Qwen v3's grid (2 KV heads × splits) is too small below 8K tokens, so the default picks v3 only for
-  GQA models at ≥ 8K tokens and v2 otherwise.
+But GQA decode is not really a matrix-*vector* product: for each KV head it is
+`S = Q·Kᵀ` with Q of shape [R × D], i.e. a small **matrix-matrix** product — tensor-core work.
+R ≤ 16 query heads fit in the 16 rows of one MMA tile (padded rows are zero).
+
+**v4 (WMMA + shared-memory tiles).** Per CUDA block (one KV head, one split) and per tile of 32–64
+tokens: 8-byte int8 loads → dequantize → 16-byte stores of fp16 K/V into shared memory (rows padded
+by 8 halves against bank conflicts); `S = Q·Kᵀ` with `wmma::mma_sync`; online softmax by 8–16
+threads per query row (shuffles inside the row group); `P` stored as fp16; the fp32 O accumulator
+(shared memory) rescaled by `exp(m_old − m_new)`; `O += P·V` with WMMA. The next tile's raw bytes are
+loaded into registers right after the barrier, so the loads are in flight while the tensor cores work
+(software pipelining). Result: **2.1× over v3** on Qwen — but only 1.1× on a D = 128 model, and still
+only ~1/3 of DRAM bandwidth. WMMA fragments have an opaque register layout, so S, P and O must round-
+trip through shared memory, with 4 `__syncthreads` per tile and few warps per SM (the 32 KB of tiles
+per block limit residency).
+
+**v5 (`mma.sync` PTX, register-resident).** The PTX `mma.sync.aligned.m16n8k16` instruction has a
+*documented* fragment layout, which allows the FlashAttention-2 tricks:
+
+* the C fragment of `S = Q·Kᵀ` (rows `gid`, `gid+8`; columns `2·tig`, `2·tig+1` of each 8-token
+  n-tile, with `gid = lane/4`, `tig = lane%4`) is exactly the A fragment `P·V` needs, so **P goes from
+  the softmax straight into the next MMA in registers**;
+* row max and row sum need only the 4 lanes of a quad (2 `__shfl_xor_sync` each); the row sum stays
+  thread-local until the end;
+* the 16 × D fp32 O accumulator lives in registers (D/2 per thread) and is rescaled in place;
+* **no shared memory and no barrier in the main loop**: each warp streams its own 16-token chunks, so
+  loads from all warps overlap freely; warps are merged once at the end;
+* **int8 enters the tensor cores exactly**: two `__byte_perm` + one `__hsub2` turn 2 int8 values into
+  2 fp16 values (bits `0x64uu` = 1024 + u, minus 1152), and the per-token scales are applied to the
+  16 × 16 S and P tiles instead of to every K/V element;
+* **head_dim is permuted consistently for Q and K** (a dot product does not depend on the order of
+  its terms), so each lane fetches its K slice with one 16-byte load and its V slice with 8-byte
+  loads instead of 2-byte gathers; the output permutation is undone when O is written.
+
+v5 has 96 (D = 64) / 168 (D = 128) registers and only 17–42% theoretical occupancy, yet it reaches
+**82% of the measured DRAM ceiling** at D = 128 (roofline run): the parallelism comes from
+independent instructions inside each warp (16 MMAs and 8–12 outstanding loads per 16 tokens), not
+from more warps — the "better performance at lower occupancy" effect.
+
+### 5.2 Results
+
+One layer, one decode step, µs (lower is better). All implementations measured in the same run,
+best of 3 medians, laptop **on battery** (GPU power-limited: absolute times are ~1.3–1.6× slower than
+the plugged-in run, e.g. OPT int8 v2 at 32K: 1311 µs here vs 803 µs plugged in; ratios are fair):
+
+| Context | Model | PyTorch SDPA fp16 | kvwear fp16 kernel | dequantize + SDPA | v2 | v3 | v4 WMMA | **v5 mma.sync** |
+|---|---|---|---|---|---|---|---|---|
+| 8K | Qwen2.5-0.5B (14 q / 2 kv heads, D 64) | 268 | 134 | 868 | 130 | 124 | 114 | **95** |
+| 16K | Qwen2.5-0.5B | 450 | 282 | 1677 | 201 | 180 | 114 | **90** |
+| 32K | Qwen2.5-0.5B | 1062 | 495 | 3482 | 386 | 276 | 130 | **116** |
+| 8K | Llama-3-8B shape (32 q / 8 kv heads, D 128) | 1963 | 378 | 5019 | 480 | 337 | 286 | **183** |
+| 16K | Llama-3-8B shape | 4110 | 882 | 10062 | 976 | 618 | 574 | **309** |
+| 32K | Llama-3-8B shape | 7594 | 2019 | 20957 | 1902 | 1364 | 1201 | **582** |
+| 32K | OPT-1.3B (32 / 32 heads, MHA) | 3578 | 1830 | 7101 | **1311** | – | – | – |
+
+Plugged-in run of the MHA kernels (OPT-1.3B, before v4/v5 existed):
+
+| Context | PyTorch SDPA fp16 | kvwear fp16 kernel | dequantize + SDPA | **kvwear int8 v2** | int8 DRAM GB/s |
+|---|---|---|---|---|---|
+| 8K | 795 | 411 | 1794 | **243** | 142 |
+| 16K | 1570 | 750 | 3331 | **429** | 161 |
+| 32K | 3245 | 1563 | 6681 | **803** | **172 (92% of peak)** |
+
+* **GQA:** v5 is 2.3–2.4× faster than v3 at 32K, **9.2× (Qwen) and 13× (Llama shape) faster than
+  PyTorch SDPA**, and 3.5–4.3× faster than the same split-K algorithm on an fp16 cache.
+* **MHA** (R = 1) has no matrix product to give the tensor cores; v2 is the right kernel there and
+  runs at 92% of peak bandwidth: int8 is **1.95× faster than fp16** (half the bytes) and **4× faster
+  than SDPA**.
+* "Dequantize + SDPA" (expand int8 to fp16 with the scatter kernel, then attend) is the slowest in
+  every row: fusing dequantization into attention is what makes int8 KV pay off.
+* Accuracy: relative error vs an fp32 reference on the original fp16 KV is 8.2–8.6e-3 for every int8
+  kernel, v4/v5 included (it is the int8 quantization itself); against the dequantized KV the
+  CUDA-core kernels are within 2e-3 and the tensor-core kernels within 4e-3 (tests).
+* Below ~4K tokens all variants are dominated by launch overhead (two kernels, ~60–90 µs).
+* `choose_kernel()` (attention.py) picks v5 for GQA models (when R ≤ 16 and the scale group is 64
+  or 128 values) and v2 otherwise. v5 does more work per warp and wants fewer, longer splits: tokens
+  per split are chosen for ~4 CUDA blocks per SM, up to 8192 tokens (measured sweep).
 
 ![decode attention](../results/cuda/attention_decode.png)
 
-This kernel is benchmarked and tested standalone; wiring it into HF transformers' attention for
-end-to-end generation is future work (§8).
+---
+
+## 6. Profiling: roofline, occupancy, Nsight Compute
+
+`python -m kvwear.cuda.roofline` (results in `results/cuda/roofline.md`, `roofline.png`,
+`occupancy.png`) answers "how far is each kernel from what this GPU can do, and why".
+
+**Measured ceilings** (`kvprof_kernels.cu`): an FMA kernel with 16 independent dependency chains per
+thread (so the FP32 pipes never wait on latency) and 128-bit grid-stride read / copy / write
+kernels on 256 MiB, best of several grid sizes:
+
+| ceiling | measured | spec |
+|---|---|---|
+| FP32 FMA throughput | 4.85 TFLOP/s | 6.14 TFLOP/s at the 1.5 GHz base clock (16 SMs × 128 lanes × 2) |
+| DRAM read | 170 GB/s | 188 GB/s (128-bit GDDR6 at 5.87 GHz effective) |
+| DRAM copy / write | 158 / 170 GB/s | |
+
+The ridge point is ~28 FLOP/byte. Every kvwear kernel is to its left (quantize ≈ 1, MHA attention
+≈ 2, GQA attention 8–14 FLOP/byte), so they are all **memory-bound** and the figure of merit is the
+fraction of DRAM bandwidth they reach (compulsory bytes ÷ time):
+
+![roofline](../results/cuda/roofline.png)
+
+Each optimization ladder climbs vertically (same work, less time): quantize v0 → v4, attention
+v1 → v5. The GQA attention ladders are the interesting ones: v1–v3 stay far below the roof even
+though they move few bytes, the tensor-core kernels close most of the gap (Llama shape v5: 140 GB/s
+= 82% of the read ceiling; Qwen v5: 96 GB/s, where 2 KV heads × 32K tokens leave few CUDA blocks).
+cuBLAS GEMMs are included as compute-bound reference points. (This run was on battery: the GPU's
+power limit lowers clocks in long kernels, which is why the 70 ms SGEMM reaches only 40% of the
+short FMA kernel's ceiling and why the 12 MiB quantize kernel shows 63% here vs 94% plugged in.)
+
+**Static resources and occupancy** — `ext().kernel_attributes()` calls `cudaFuncGetAttributes`
+(registers per thread, local memory = spills + stack, static shared memory) and
+`cudaOccupancyMaxActiveBlocksPerMultiprocessor` for every kernel at the block size its launcher
+uses; `roofline.py` then names the limiter with the occupancy-calculator rules (threads, blocks,
+registers in 256-register warp units, shared memory incl. 1 KiB reserved per block):
+
+![occupancy](../results/cuda/occupancy.png)
+
+What it showed, and what was done about it:
+
+| kernel | regs | smem | occupancy | limiter | consequence |
+|---|---|---|---|---|---|
+| quantize v0–v4, dequantize | 18–34 | 0 | 100% | threads | fine: bandwidth-bound by design |
+| attention v2 (D 64) | 62 | 4.2 KB | 67% | registers | fine for MHA (92% of peak) |
+| attention v3, R = 7 (Qwen) | **168** | 4.2 KB | **25%** | registers | latency-bound at 18% of bandwidth → redesign |
+| attention v3, R = 2 | 96 | 4.2 KB | 42% | registers | **16 B spilled** to local memory |
+| attention v4 WMMA (D 128) | 116 | 33 KB | 33% | registers / smem | tiles through smem + 4 barriers per tile |
+| attention v5 (D 128), first version | 168 | 33 KB | 17% | **shared memory** (epilogue: one 16×D tile per warp) | epilogue changed to accumulate warps in turn into one tile |
+| attention v5 (D 128), final | 168 | 8.7 KB | 25% | registers | 82% of the bandwidth ceiling at low occupancy (ILP) |
+
+**Nsight Compute.** `bash linux/profile_ncu.sh` profiles one launch of every kernel
+(`kvwear.cuda.ncu_targets`, launches bracketed by `cudaProfilerStart/Stop`) with `--set full` and
+writes `results/cuda/ncu/kvwear.ncu-rep` (open it in the Nsight Compute GUI on Windows for the
+source-level view: `-lineinfo` is on) and `ncu.md`: measured DRAM bytes and throughput, SM and
+tensor-pipe utilization, achieved vs theoretical occupancy, L2 hit rate, shared-memory bank conflicts
+and the top warp-stall reasons per kernel (`kvwear.cuda.ncu_report`, unit-tested on a synthetic export).
+`linux/setup_nsight.sh` reuses the Linux `ncu`/`nsys` binaries that the Windows Nsight installers
+already contain. On Windows GPU performance counters are admin-only by default (`ERR_NVGPUCTRPERM`,
+also inside WSL); enable them once in NVIDIA Control Panel → Desktop → Enable Developer Settings →
+Developer → Manage GPU Performance Counters → "Allow access to the GPU performance counters to all
+users". (Nsight Systems and CUPTI activity tracing record no GPU activity under WSL with this
+driver, so stream overlap is shown with CUDA-event timelines instead, §4.)
 
 ---
 
-## 6. End-to-end on the real model
+## 7. End-to-end on the real model
 
 Same trace, same policies, only `store.codec_device` differs (cpu vs cuda); 3 repetitions each,
 order shuffled; OPT-1.3B with a 256 MB RAM tier and Qwen2.5-0.5B with 8–12K-token documents
@@ -256,6 +385,10 @@ The fp16 path slows down as the context grows (decode attention reads more KV ea
 path stays flat because its attention reads half the bytes with a kernel running near the DRAM
 limit, so per-token time is dominated by the rest of the model. KV memory is halved (int8 + one fp16
 scale per 64 values), and greedy predictions agree with fp16 on 95–100% of steps.
+(Measured plugged in, with the v3 kernel. The generation cache now dispatches through
+`choose_kernel`, i.e. v5 for Qwen; a battery-power rerun gave the same picture, 2.05× at 31.7K
+tokens with 100% agreement, but the whole model runs ~30% slower on battery, so the plugged-in
+table is kept.)
 
 ![generation](../results/cuda/generate.png)
 
@@ -271,11 +404,19 @@ scale per 64 values), and greedy predictions agree with fp16 on 95–100% of ste
 | Warp-level primitives (`__shfl_xor_sync`) | all reductions (absmax, min/max, dot products) | reductions without shared memory or `__syncthreads` |
 | Sub-warp cooperative groups | quantize v4 (g/8 lanes/group), attention v2 (8 lanes/token) | matching the parallel unit to the data unit |
 | Registers as a cache / register pressure | quantize v3; attention v3 (`R` as a template parameter) | single-pass algorithms; spills when arrays are runtime-sized |
-| Shared memory + `__syncthreads` | attention: merging per-warp softmax states | intra-block communication |
+| Shared memory + `__syncthreads` | attention: merging per-warp softmax states; v4 K/V tiles | intra-block communication, tiling |
+| Shared-memory tiling, padding against bank conflicts | attention v4 (rows padded by 8 halves, `KP = D + 8`) | staging operands for tensor cores |
+| **Tensor cores, WMMA API** | attention v4 (`nvcuda::wmma`, 16×16×16 fp16 → fp32) | GQA decode as small matrix products |
+| **Tensor cores, inline PTX `mma.sync.m16n8k16`** | attention v5 (`mma16816`) | documented fragment layouts → S, P, O kept in registers (FlashAttention-2 design) |
+| Inline PTX / byte permutes | `asm volatile("mma.sync…")`, `__byte_perm` int8 → fp16 magic-number conversion | exact int8 into fp16 MMAs in 3 instructions per pair |
+| Software pipelining | attention v4 (next tile's loads issued before the MMAs of the current one) | overlapping memory latency with compute |
+| ILP vs occupancy | attention v5: 17–25% occupancy, 82% of bandwidth | independent instructions per warp hide latency, not only more warps |
+| Occupancy analysis | `kernel_attributes()` (cudaFuncGetAttributes + cudaOccupancy API), `occupancy.png` | registers / spills / smem → resident warps → limiter |
 | Avoiding warp divergence | `dequant_scatter`: method chosen per CUDA block (`blockIdx.y`), uniform loop counts in attention | branch uniformity |
 | Templates / compile-time specialization | quantize v4 (`LPG`), attention (`D`, `R`) | unrolling, register allocation |
 | Split-K parallelism + online softmax (flash-decoding) | `kvattn_kernels.cu` | parallelism along the sequence for 1-token queries; numerically stable streaming softmax |
-| Memory-bound analysis / roofline | `bench.py` (bytes moved ÷ time vs 188 GB/s peak and memcpy) | knowing when a kernel is done optimizing |
+| Roofline with measured ceilings | `kvprof_kernels.cu` (FMA-chain + 128-bit stream kernels), `roofline.py` | memory- vs compute- vs latency-bound; knowing when a kernel is done |
+| Profiler workflow | `linux/profile_ncu.sh`, `ncu_targets.py`, `ncu_report.py` | Nsight Compute `--set full`, one launch per kernel via cudaProfilerStart/Stop |
 | Pinned (page-locked) memory, DMA | `PinnedBuffer`, PCIe benchmark | 12.7 vs 7.5–9 GB/s, prerequisite for async copies |
 | CUDA streams, events, concurrency | `GpuCodec` (writer stream), `bench_overlap.py` timeline | +2% instead of +49% |
 | Copy/compute pipelining | `BlockLoader` (per-block async DMA while the CPU packs the next) | 1.4–1.8× on the load path |
@@ -285,19 +426,21 @@ scale per 64 values), and greedy predictions agree with fp16 on 95–100% of ste
 
 ---
 
-## 7. Build, run, test
+## 8. Build, run, test
 
 ```bash
 # once, in WSL: nvcc + CUDA runtime headers (no cuBLAS etc. needed)
 sudo apt-get install -y --no-install-recommends cuda-nvcc-12-1 cuda-cudart-dev-12-1
 pip install ninja
 
-bash linux/cuda_env.sh python -m pytest -q tests/test_cuda.py     # 83 tests; first call builds (~40 s)
+bash linux/cuda_env.sh python -m pytest -q tests/test_cuda.py     # 126 tests; first call builds (~1 min)
 bash linux/cuda_env.sh python -m kvwear.cuda.bench --out results/cuda            # kernels, PCIe, load path
 bash linux/cuda_env.sh python -m kvwear.cuda.bench_attention --out results/cuda  # int8 decode attention
 bash linux/cuda_env.sh python -m kvwear.cuda.bench_overlap --out results/cuda    # stream overlap timeline
 bash linux/cuda_env.sh bash linux/cuda_e2e.sh 3                                   # real model, cpu vs cuda codec
 bash linux/cuda_env.sh python -m kvwear.cuda.bench_generate --out results/cuda   # generation, int8 GPU KV cache
+bash linux/cuda_env.sh python -m kvwear.cuda.roofline --out results/cuda         # ceilings, roofline, occupancy
+sudo bash linux/setup_nsight.sh && bash linux/profile_ncu.sh                      # Nsight Compute report (counters enabled)
 
 # use it in any experiment
 python -m kvwear.runner --config configs/default.yaml --policy reuse_int8 --set store.codec_device=cuda
@@ -312,20 +455,26 @@ Files:
 ```
 kvwear/cuda/
   kvquant_kernels.cu     quantize v0..v4, dequantize, batched dequantize+scatter, DRAM-bandwidth query
-  kvattn_kernels.cu      paged int8 decode attention v1..v3, dense fp16 baseline, split combine
+  kvattn_kernels.cu      paged int8 decode attention v1..v5 (v4 WMMA, v5 mma.sync PTX), dense fp16 baseline, split combine
+  kvprof_kernels.cu      roofline ceiling kernels (FMA chains, stream read/copy/write), kernel attributes + occupancy
+  kvprof.h               kernel registry shared by the .cu files
   kvquant_bindings.cpp   PyTorch bindings (current-stream aware, shape/alignment checks)
   kvcache_kernels.cu     append new K/V rows to a GPU int8 cache; gather (dequantize) for chunked prefill
   kvcache_bindings.cpp   bindings for the cache extension
   int8_cache.py          Int8GpuCache (transformers Cache) + int8 decode-attention hook
   __init__.py            JIT build, PinnedBuffer, GpuCodec (own stream), BlockLoader
-  attention.py           PagedInt8KV (block table), dense baseline, fp32 reference
+  attention.py           PagedInt8KV (block table), choose_kernel (variant + split size), dense baseline, fp32 reference
+  roofline.py            measured ceilings, kernels on the roofline, occupancy report and plots
+  ncu_targets.py         one launch per kernel for Nsight Compute;  ncu_report.py  ncu CSV -> ncu.md
   bench.py, bench_attention.py, bench_overlap.py, bench_generate.py, compare_e2e.py
-tests/test_cuda.py       83 tests (skipped automatically without a GPU / nvcc)
+tests/test_cuda.py       126 tests (skipped automatically without a GPU / nvcc)
+tests/test_ncu_report.py Nsight Compute report parser (no GPU needed)
+linux/setup_nsight.sh    ncu / nsys for WSL from the Windows Nsight installs;  linux/profile_ncu.sh  full profile
 ```
 
 ---
 
-## 8. Limitations and next steps
+## 9. Limitations and next steps
 
 * The int8 GPU cache is wired into Qwen2-style models (transformers `AttentionInterface`) for
   batch-1 decoding; batched decoding, OPT's attention class, and feeding SSD blocks straight into
@@ -334,6 +483,13 @@ tests/test_cuda.py       83 tests (skipped automatically without a GPU / nvcc)
   straight into a pinned slab pool would remove that copy for the load path too.
 * Kernel timings are on one laptop GPU whose clocks vary with temperature; all numbers are
   medians of repeated CUDA-event measurements after warm-up.
-* WSL2 does not expose Nsight Compute counters; achieved bandwidth is computed from bytes moved and
-  CUDA-event time, compared against the theoretical peak from `cudaDevAttrMemoryClockRate` and
-  `cudaDevAttrGlobalMemoryBusWidth` and against a measured device-to-device copy.
+* Nsight Compute runs in WSL (`linux/setup_nsight.sh`) but needs GPU performance counters enabled
+  for non-admin users on the Windows host; until then the analysis relies on the roofline (compulsory
+  bytes ÷ CUDA-event time against measured ceilings) and the static occupancy report.
+* The tensor-core attention kernels cover GQA with R ≤ 16 and scale groups of 64/128 values on
+  sm_80+ (WMMA needs sm_70+); MHA uses v2, where there is no matrix product to accelerate. Below ~4K
+  tokens all decode kernels are launch-bound; merging the split-combine step into the main kernel
+  (or CUDA Graphs over the 24 layers) would cut that overhead.
+* The latest attention / roofline numbers were measured on battery power (GPU power-limited);
+  ratios between implementations in one run are fair, absolute times are 1.3–1.6× slower than
+  plugged in.

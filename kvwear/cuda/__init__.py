@@ -61,7 +61,8 @@ def ext(verbose: bool = False):
         _ext = load(
             name="kvwear_cuda",
             sources=[str(_HERE / "kvquant_bindings.cpp"), str(_HERE / "kvquant_kernels.cu"),
-                     str(_HERE / "kvattn_kernels.cu")],
+                     str(_HERE / "kvattn_kernels.cu"), str(_HERE / "kvprof_kernels.cu")],
+            extra_include_paths=[str(_HERE)],
             extra_cflags=["-O3"],
             # no --use_fast_math: division and rounding must match the CPU codec bit for bit
             extra_cuda_cflags=["-O3", "-lineinfo", "--fmad=false"],

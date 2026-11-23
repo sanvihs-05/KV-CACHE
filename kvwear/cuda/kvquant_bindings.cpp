@@ -139,6 +139,59 @@ torch::Tensor dense_fp16_decode(torch::Tensor q, torch::Tensor K, torch::Tensor 
     return out;
 }
 
+// ------------------------------------------------------------------ profiling (kvprof_kernels.cu)
+#include "kvprof.h"
+int kvwear_kernel_attrs(KernelAttr* out, int max);
+void kvwear_device_props(int dev, int* vals);
+void launch_peak_fp32(float* out, int blocks, int iters, cudaStream_t st);
+int peak_fp32_chains();
+void launch_stream(int mode, const void* in, void* out, long n16, int grid, cudaStream_t st);
+
+py::list kernel_attributes() {
+    KernelAttr a[160];
+    int n = kvwear_kernel_attrs(a, 160);
+    py::list out;
+    for (int i = 0; i < n; ++i) {
+        py::dict d;
+        d["name"] = a[i].name; d["block"] = a[i].block; d["regs"] = a[i].regs; d["local_bytes"] = a[i].local_bytes;
+        d["static_smem"] = a[i].static_smem; d["const_bytes"] = a[i].const_bytes; d["max_threads"] = a[i].max_threads;
+        d["ptx_version"] = a[i].ptx_version; d["binary_version"] = a[i].binary_version;
+        d["blocks_per_sm"] = a[i].blocks_per_sm;
+        out.append(d);
+    }
+    return out;
+}
+
+py::dict device_props(int64_t device) {
+    static const char* keys[] = {"sms", "clock_khz", "mem_clock_khz", "bus_bits", "regs_per_sm", "smem_per_sm",
+                                 "smem_per_block_optin", "max_threads_per_sm", "max_blocks_per_sm", "warp_size",
+                                 "l2_bytes", "cc_major", "cc_minor", "reserved_smem_per_block"};
+    int v[14];
+    kvwear_device_props((int)device, v);
+    py::dict d;
+    for (int i = 0; i < 14; ++i) d[keys[i]] = v[i];
+    return d;
+}
+
+// FMA-throughput ceiling: returns the per-thread results (so nothing is optimized away)
+torch::Tensor peak_fp32(int64_t blocks, int64_t iters) {
+    auto out = torch::empty({blocks * 256}, torch::dtype(torch::kFloat).device(torch::kCUDA));
+    launch_peak_fp32(out.data_ptr<float>(), (int)blocks, (int)iters, c10::cuda::getCurrentCUDAStream().stream());
+    C10_CUDA_KERNEL_LAUNCH_CHECK();
+    return out;
+}
+
+// bandwidth ceilings. mode 0 read src, 1 copy src->dst, 2 write dst. Sizes in bytes, multiple of 16.
+void stream_bench(int64_t mode, torch::Tensor src, torch::Tensor dst, int64_t grid) {
+    TORCH_CHECK(src.is_cuda() && dst.is_cuda() && src.is_contiguous() && dst.is_contiguous(), "CUDA tensors");
+    long nb = (long)(mode == 2 ? dst.nbytes() : src.nbytes());
+    TORCH_CHECK(nb % 16 == 0, "size must be a multiple of 16 bytes");
+    TORCH_CHECK(mode != 1 || dst.nbytes() >= src.nbytes(), "dst too small");
+    TORCH_CHECK(mode != 0 || dst.nbytes() >= (size_t)grid * 256 * 16, "dst must hold grid*256 uint4");
+    launch_stream((int)mode, src.data_ptr(), dst.data_ptr(), nb / 16, (int)grid, c10::cuda::getCurrentCUDAStream().stream());
+    C10_CUDA_KERNEL_LAUNCH_CHECK();
+}
+
 py::dict device_memory_info(int64_t device) {
     double peak; int clk, bus;
     query_memory_bandwidth((int)device, &peak, &clk, &bus);
@@ -163,4 +216,11 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     m.def("dense_fp16_decode", &dense_fp16_decode, "decode attention over a dense fp16 cache",
           py::arg("q"), py::arg("K"), py::arg("V"), py::arg("tps") = 256, py::arg("scale") = 0.125);
     m.def("device_memory_info", &device_memory_info, "theoretical DRAM bandwidth of a device");
+    m.def("kernel_attributes", &kernel_attributes,
+          "registers / spills / shared memory / occupancy of every kvwear kernel (cudaFuncGetAttributes)");
+    m.def("device_props", &device_props, "SM resources of a device (cudaDeviceGetAttribute)", py::arg("device") = 0);
+    m.def("peak_fp32", &peak_fp32, "FMA-throughput ceiling kernel", py::arg("blocks"), py::arg("iters"));
+    m.def("peak_fp32_chains", &peak_fp32_chains, "independent FMA chains per thread in peak_fp32");
+    m.def("stream_bench", &stream_bench, "bandwidth ceiling kernels: 0 read, 1 copy, 2 write",
+          py::arg("mode"), py::arg("src"), py::arg("dst"), py::arg("grid"));
 }

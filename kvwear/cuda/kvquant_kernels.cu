@@ -493,6 +493,33 @@ void launch_dequant_scatter(const void* base, const long* offs, const int* toffs
                                         n2, groups, Tb, D, Ttot, g);
 }
 
+#include "kvprof.h"
+
+// every kernel above with the block size its launcher uses (for the resource/occupancy report)
+int kvquant_kernel_refs(KernelRef* out, int max) {
+    const KernelRef refs[] = {
+        {"quant_int8 v0 naive", (const void*)quant_int8_naive, 256},
+        {"quant_int8 v1 warp", (const void*)quant_int8_warp, 256},
+        {"quant_int8 v2 warp_vec", (const void*)quant_int8_warp_vec, 256},
+        {"quant_int8 v3 warp_reg", (const void*)quant_int8_warp_reg, 256},
+        {"quant_int8 v4 subwarp<8> (g=64)", (const void*)quant_int8_subwarp<8>, 256},
+        {"quant_int8 v4 subwarp<16> (g=128)", (const void*)quant_int8_subwarp<16>, 256},
+        {"quant_int4 v0 naive", (const void*)quant_int4_naive, 256},
+        {"quant_int4 v1 warp", (const void*)quant_int4_warp, 256},
+        {"quant_int4 v2 warp_vec", (const void*)quant_int4_warp_vec, 256},
+        {"quant_int4 v3 warp_reg", (const void*)quant_int4_warp_reg, 256},
+        {"quant_int4 v4 subwarp<8> (g=64)", (const void*)quant_int4_subwarp<8>, 256},
+        {"dequant_int8 (half2)", (const void*)dequant_int8, 256},
+        {"dequant_int4 (half2)", (const void*)dequant_int4, 256},
+        {"dequant_v8 (8 values/thread)", (const void*)dequant_v8, 256},
+        {"dequant_scatter (half2)", (const void*)dequant_scatter, 256},
+        {"dequant_scatter_v8", (const void*)dequant_scatter_v8, 256},
+    };
+    int n = 0;
+    for (const auto& r : refs) if (n < max) out[n++] = r;
+    return n;
+}
+
 void query_memory_bandwidth(int device, double* peak_gbps, int* clock_khz, int* bus_bits) {
     cudaDeviceGetAttribute(clock_khz, cudaDevAttrMemoryClockRate, device);
     cudaDeviceGetAttribute(bus_bits, cudaDevAttrGlobalMemoryBusWidth, device);

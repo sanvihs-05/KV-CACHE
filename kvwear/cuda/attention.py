@@ -54,14 +54,14 @@ class PagedInt8KV:
 
     def decode(self, q, layer: int, tokens: int | None = None, tps: int | None = None, scale: float | None = None,
                variant: int | None = None):
-        """1: one warp per token; 2: sub-warp per token, 8-byte loads; 3: 2 + GQA head packing.
-        Default (None): v3 for GQA models at >= 8K tokens (where it measured faster), else v2.
-        tps (tokens per split) defaults to a value that gives every SM several CUDA blocks."""
+        """variant 1: one warp per token; 2: sub-warp per token, 8-byte loads; 3: 2 + GQA head packing;
+        4: GQA on tensor cores (WMMA, shared-memory tiles); 5: GQA on tensor cores, register-resident
+        (mma.sync PTX, FlashAttention-2 style). None picks the fastest eligible kernel (choose_kernel).
+        tps (tokens per split) defaults to the measured best for that kernel."""
         T = self.tokens if tokens is None else tokens
-        if variant is None:
-            variant = 3 if (q.shape[0] > self.hkv and T >= 8192) else 2
-        if tps is None:
-            tps = auto_tps(T, self.hkv if (variant >= 3 and q.shape[0] > self.hkv) else q.shape[0])
+        v_auto, tps_auto = choose_kernel(q.shape[0], self.hkv, T, self.d, self.g, self.tb, variant)
+        variant = v_auto if variant is None else variant
+        tps = tps_auto if tps is None else tps
         scale = 1.0 / math.sqrt(self.d) if scale is None else scale
         return ext().paged_int8_decode(q.contiguous(), self.base, self.offs, self.groups, layer,
                                        self.hkv, self.tb, T, self.g, tps, scale, variant)
@@ -70,15 +70,36 @@ class PagedInt8KV:
 _SMS = None
 
 
-def auto_tps(T: int, heads_in_grid: int, blocks_per_sm: int = 8) -> int:
-    """Tokens per split so that heads x splits >= blocks_per_sm x SMs (multiple of 64, 64..1024)."""
+def auto_tps(T: int, heads_in_grid: int, blocks_per_sm: int = 8, cap: int = 1024) -> int:
+    """Tokens per split so that heads x splits >= blocks_per_sm x SMs (multiple of 64, 64..cap)."""
     global _SMS
     if _SMS is None:
         import torch
         _SMS = torch.cuda.get_device_properties(0).multi_processor_count
     want_splits = max(1, (blocks_per_sm * _SMS + heads_in_grid - 1) // heads_in_grid)
     tps = -(-T // want_splits)
-    return int(min(1024, max(64, -(-tps // 64) * 64)))
+    return int(min(cap, max(64, -(-tps // 64) * 64)))
+
+
+def v5_eligible(hq: int, hkv: int, d: int, g: int, tb: int) -> bool:
+    r = hq // hkv
+    return 1 < r <= 16 and d in (64, 128) and (g == d or (d == 128 and g == 64)) and tb % 16 == 0
+
+
+def choose_kernel(hq: int, hkv: int, T: int, d: int, g: int, tb: int, variant: int | None = None):
+    """(variant, tokens per split). GQA -> v5 (register-resident tensor cores) when eligible; it is
+    fastest at every measured length (results/cuda/attention.md). v5 does more work per warp, so it
+    wants fewer, longer splits: ~4 CUDA blocks per SM, splits up to 8192 tokens. MHA -> v2."""
+    if variant is None:
+        if hq > hkv and v5_eligible(hq, hkv, d, g, tb):
+            variant = 5
+        elif hq > hkv and T >= 8192:
+            variant = 3
+        else:
+            variant = 2
+    if variant >= 5 and hq > hkv:
+        return variant, auto_tps(T, hkv, blocks_per_sm=4, cap=8192)
+    return variant, auto_tps(T, hkv if (variant >= 3 and hq > hkv) else hq)
 
 
 def dense_fp16_decode(q, K, V, tps: int | None = None, scale: float | None = None):

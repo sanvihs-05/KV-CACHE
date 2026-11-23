@@ -158,6 +158,73 @@ def test_paged_int8_attention_matches_reference(hq, hkv, d, tokens):
         assert ((dense - ref).norm() / ref.norm()).item() < 2e-3
 
 
+def _paged_case(hq, hkv, d, g, tokens, layers=2, seed=0):
+    from kvwear.cuda.attention import PagedInt8KV
+    rng = np.random.default_rng(seed + tokens)
+    Tb = 64
+    nblk = (tokens + Tb - 1) // Tb
+    kv = (rng.standard_normal((layers, 2, hkv, nblk * Tb, d), dtype=np.float32) * 1.5).astype(np.float16)
+    codec = Codec("int8", group=g)
+    datas = [bytearray(codec.encode(np.ascontiguousarray(kv[:, :, :, i * Tb:(i + 1) * Tb]))) for i in range(nblk)]
+    deq = np.concatenate([Codec.decode(x) for x in datas], axis=3)
+    q = (torch.randn(hq, d, device="cuda") * 1.5).half()
+    return PagedInt8KV.from_payloads(datas), deq, q
+
+
+@pytest.mark.parametrize("hq,hkv,d,g", [(14, 2, 64, 64), (8, 2, 128, 64), (12, 4, 128, 128), (32, 2, 64, 64),
+                                        (6, 3, 64, 64)])
+@pytest.mark.parametrize("tokens", [16, 200, 1000, 4100])
+@pytest.mark.parametrize("variant", [4, 5])
+def test_tensor_core_attention_matches_reference(hq, hkv, d, g, tokens, variant):
+    """v4 (WMMA) and v5 (mma.sync): fp16 tensor-core math, so a looser bound than the fp32 kernels."""
+    from kvwear.cuda.attention import reference
+    paged, deq, q = _paged_case(hq, hkv, d, g, tokens)
+    for layer in range(2):
+        Kd = torch.from_numpy(np.ascontiguousarray(deq[layer, 0, :, :tokens])).cuda()
+        Vd = torch.from_numpy(np.ascontiguousarray(deq[layer, 1, :, :tokens])).cuda()
+        ref = reference(q, Kd, Vd)
+        for tps in (None, 64, 1024):                     # default, many splits, few splits
+            out = paged.decode(q, layer, tokens=tokens, variant=variant, tps=tps).float()
+            assert torch.isfinite(out).all()
+            assert ((out - ref).norm() / ref.norm()).item() < 4e-3, (variant, tps)
+
+
+def test_choose_kernel_picks_v5_for_gqa_and_v2_for_mha():
+    from kvwear.cuda.attention import choose_kernel
+    assert choose_kernel(14, 2, 32768, 64, 64, 64)[0] == 5
+    assert choose_kernel(32, 8, 4096, 128, 64, 64)[0] == 5
+    assert choose_kernel(32, 32, 32768, 64, 64, 64)[0] == 2
+    assert choose_kernel(14, 2, 32768, 64, 32, 64)[0] == 3          # g=32: v5 not eligible
+    v, tps = choose_kernel(14, 2, 32768, 64, 64, 64)
+    assert tps % 64 == 0 and 64 <= tps <= 8192
+
+
+def test_kernel_attributes_report():
+    e = kvcuda.ext()
+    rows = e.kernel_attributes()
+    names = [r["name"] for r in rows]
+    assert any("v5 mma.sync" in n for n in names) and any("quant_int8 v4" in n for n in names)
+    for r in rows:
+        assert r["regs"] > 0 and r["blocks_per_sm"] >= 1, r
+    p = e.device_props(0)
+    assert p["sms"] > 0 and p["regs_per_sm"] >= 32768
+
+
+def test_roofline_ceiling_kernels_run():
+    e = kvcuda.ext()
+    out = e.peak_fp32(8, 64)
+    torch.cuda.synchronize()
+    assert torch.isfinite(out).all()
+    src = torch.randint(0, 255, (1 << 20,), dtype=torch.uint8, device="cuda")
+    dst = torch.zeros_like(src)
+    e.stream_bench(1, src, dst, 64)                           # copy
+    torch.cuda.synchronize()
+    assert torch.equal(src, dst)
+    e.stream_bench(2, src, dst, 64)                           # write
+    e.stream_bench(0, src, dst, 64)                           # read
+    torch.cuda.synchronize()
+
+
 def test_int8_gpu_cache_append_and_gather_roundtrip():
     from kvwear.cuda.int8_cache import Int8GpuCache, cache_ext
     hkv, d, tmax = 2, 64, 300
@@ -170,7 +237,8 @@ def test_int8_gpu_cache_append_and_gather_roundtrip():
         ks.append(k[0]); vs.append(v[0])
     T = c.get_seq_length(0)
     assert T == 138
-    kd, vd = cache_ext().gather_int8(c.buf[0], hkv, T, d, tmax, c.g)
+    assert c.tmax % 64 == 0 and c.tmax >= tmax              # capacity rounded up for the v5 kernel
+    kd, vd = cache_ext().gather_int8(c.buf[0], hkv, T, d, c.tmax, c.g)
     kref = torch.cat(ks, 1).cpu().numpy()
     vref = torch.cat(vs, 1).cpu().numpy()
     # same quantization as the CPU codec, row by row

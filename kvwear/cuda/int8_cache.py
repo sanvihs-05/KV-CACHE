@@ -54,6 +54,7 @@ class Int8GpuCache(_HFCache):
     def __init__(self, layers: int, hkv: int, head_dim: int, max_tokens: int, device="cuda", group: int = 64):
         super().__init__()
         g = group if head_dim % group == 0 else head_dim
+        max_tokens = -(-max_tokens // 64) * 64          # 16-token alignment for the v5 kernel
         self.layers, self.hkv, self.d, self.tmax, self.g = layers, hkv, head_dim, max_tokens, g
         self.groups = 2 * hkv * max_tokens * (head_dim // g)
         nbytes = 2 * self.groups + 2 * hkv * max_tokens * head_dim
@@ -102,10 +103,8 @@ class Int8GpuCache(_HFCache):
     def decode(self, q, layer_idx: int, scale: float):
         """q: [Hq, D] fp16 -> attention output [Hq, D] over the cached tokens of this layer."""
         T = self.lens[layer_idx]
-        hq = q.shape[0]
-        from .attention import auto_tps
-        variant = 3 if (hq > self.hkv and T >= 8192) else 2
-        tps = auto_tps(T, self.hkv if variant == 3 else hq)
+        from .attention import choose_kernel
+        variant, tps = choose_kernel(q.shape[0], self.hkv, T, self.d, self.g, self.tmax)
         return ext().paged_int8_decode(q, self.buf[layer_idx], self.offs, self.groups, 0, self.hkv, self.tmax, T,
                                        self.g, tps, scale, variant)
 
